@@ -22,15 +22,29 @@ ap.add_argument("--loglevel",
 
 modes = ap.add_subparsers(title = "Objects to manage")
 
+# User commands
+
 p_user = modes.add_parser("user",
         help = "User accounts")
 
 sp_user = p_user.add_subparsers(title = "User command")
+
 sp_user.add_parser("list")
-p_user_search = sp_user.add_parser("search", aliases = ['find', 'grep'])
+
+p_user_search = sp_user.add_parser("search", aliases = ["find", "grep"])
 p_user_search.add_argument("pattern",
         metavar = "PATTERN",
         help = "Search pattern")
+
+sp_user.add_parser("show",
+        aliases = ["info"],
+        help = "Show details for the account(s)")
+
+p_user_restore = sp_user.add_parser("restore", aliases = ["unlock", "unban", "enable"])
+
+p_user_suspend = sp_user.add_parser("suspend", aliases = ["lock", "ban", "disable"])
+
+# List commands
 
 p_list = modes.add_parser("list",
         help = "Mailing lists")
