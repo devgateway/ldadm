@@ -1,5 +1,38 @@
 #!/usr/bin/python3
-import ldap
+import ldap3
 import argparse
+import logging
 
-import .settings
+log_levels = {
+    "CRITICAL": logging.CRITICAL,
+    "ERROR": logging.ERROR,
+    "WARNING": logging.WARNING,
+    "INFO": logging.INFO,
+    "DEBUG": logging.DEBUG
+}
+
+ap = argparse.ArgumentParser(description = "Manage LDAP accounts")
+
+ap.add_argument("--loglevel",
+        dest = "log_level",
+        default = "WARNING",
+        type = str,
+        choices = log_levels.keys(),
+        help = "Set logging verbosity")
+
+modes = ap.add_subparsers(title = "Objects to manage")
+
+p_user = modes.add_parser("user",
+        help = "User accounts")
+
+sp_user = p_user.add_subparsers(title = "User command")
+sp_user.add_parser("list")
+p_user_search = sp_user.add_parser("search", aliases = ['find', 'grep'])
+p_user_search.add_argument("pattern",
+        metavar = "PATTERN",
+        help = "Search pattern")
+
+p_list = modes.add_parser("list",
+        help = "Mailing lists")
+
+ap.parse_args()
