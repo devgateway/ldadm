@@ -10,7 +10,9 @@
 
 	ldadm user list
 	ldadm user search
-	ldadm user {show|suspend|restore|delete|add|rename|grant} [-r] USERNAME…
+	ldadm user {show|suspend|restore|delete} [USERNAME…]
+	ldadm user add [-r] [USERNAME]
+	ldadm user rename OLDNAME NEWNAME
 	ldadm user keys list USERNAME
 	ldadm user keys {delete|add} [-f FILENAME] USERNAME
 

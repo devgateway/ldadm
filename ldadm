@@ -24,35 +24,55 @@ modes = ap.add_subparsers(title = "Objects to manage")
 
 # User commands
 
-p_user = modes.add_parser("user",
+user_parser = modes.add_parser("user",
         help = "User accounts")
 
-sp_user = p_user.add_subparsers(title = "User command")
+user = user_parser.add_subparsers(title = "User command")
 
-sp_user.add_parser("list")
+user.add_parser("list")
 
-p_user_search = sp_user.add_parser("search",
+search = user.add_parser("search",
         aliases = ["find", "grep"])
-
-p_user_search.add_argument("pattern",
+search.add_argument("pattern",
         metavar = "PATTERN",
         help = "Search pattern")
 
-sp_user.add_parser("show",
+multi_user_parser = argparse.ArgumentParser(add_help = False)
+multi_user_parser.add_argument("username",
+        metavar = "USERNAME",
+        nargs = "*",
+        help = "One or more UIDs. If omitted, read from stdin.")
+
+user.add_parser("show",
         aliases = ["info"],
+        parents = [multi_user_parser],
         help = "Show details for the accounts")
 
-p_user_suspend = sp_user.add_parser("suspend",
+user.add_parser("suspend",
         aliases = ["lock", "ban", "disable"],
+        parents = [multi_user_parser],
         help = "Make the accounts inactive")
 
-p_user_restore = sp_user.add_parser("restore",
+user.add_parser("restore",
         aliases = ["unlock", "unban", "enable"],
+        parents = [multi_user_parser],
         help = "Re-activate the accounts")
 
-p_user_delete = sp_user.add_parser("add",
+user.add_parser("delete",
+        aliases = ["remove"],
+        parents = [multi_user_parser],
+        help = "Irreversibly destroy the account")
+
+user_add = user.add_parser("add",
         aliases = ["create"],
         help = "Add a new account")
+user_add.add_argument("username",
+        metavar = "USERNAME",
+        nargs = '?',
+        help = "Account UID")
+
+p_user_rename = user.add_parser("rename",
+        help = "Change account UID")
 
 # List commands
 
