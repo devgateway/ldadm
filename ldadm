@@ -37,6 +37,8 @@ search.add_argument("pattern",
         metavar = "PATTERN",
         help = "Search pattern")
 
+# User commands that accept zero or more UIDs
+
 multi_user_parser = argparse.ArgumentParser(add_help = False)
 multi_user_parser.add_argument("username",
         metavar = "USERNAME",
@@ -46,22 +48,24 @@ multi_user_parser.add_argument("username",
 user.add_parser("show",
         aliases = ["info"],
         parents = [multi_user_parser],
-        help = "Show details for the accounts")
+        help = "Show details for accounts")
 
 user.add_parser("suspend",
         aliases = ["lock", "ban", "disable"],
         parents = [multi_user_parser],
-        help = "Make the accounts inactive")
+        help = "Make accounts inactive")
 
 user.add_parser("restore",
         aliases = ["unlock", "unban", "enable"],
         parents = [multi_user_parser],
-        help = "Re-activate the accounts")
+        help = "Re-activate accounts")
 
 user.add_parser("delete",
         aliases = ["remove"],
         parents = [multi_user_parser],
-        help = "Irreversibly destroy the account")
+        help = "Irreversibly destroy accounts")
+
+# Other user commands
 
 user_add = user.add_parser("add",
         aliases = ["create"],
@@ -71,8 +75,47 @@ user_add.add_argument("username",
         nargs = '?',
         help = "Account UID")
 
-p_user_rename = user.add_parser("rename",
+user_rename = user.add_parser("rename",
         help = "Change account UID")
+user_rename.add_argument("oldname",
+        metavar = "OLDNAME",
+        help = "Old UID")
+user_rename.add_argument("newname",
+        metavar = "NEWNAME",
+        help = "New UID")
+
+# Public key commands
+
+key_parser = user.add_parser("key")
+key = key_parser.add_subparsers(title = "Key command")
+
+single_user_parser = argparse.ArgumentParser(add_help = False)
+single_user_parser.add_argument("username",
+        metavar = "USERNAME",
+        help = "User ID")
+
+key_from_file = argparse.ArgumentParser(add_help = False)
+key_from_file.add_argument("-f", "--file",
+        dest = "keyfile",
+        metavar = "KEYFILE",
+        type = argparse.FileType('r'),
+        nargs = 1,
+        help = "Read public key from file")
+
+key.add_parser("list",
+        aliases = ["show"],
+        parents = [single_user_parser],
+        help = "List public keys for a user")
+
+key.add_parser("add",
+        aliases = ["create"],
+        parents = [single_user_parser, key_from_file],
+        help = "Add a public key to a user")
+
+key.add_parser("delete",
+        aliases = ["remove"],
+        parents = [single_user_parser, key_from_file],
+        help = "Remove a public key from a user")
 
 # List commands
 

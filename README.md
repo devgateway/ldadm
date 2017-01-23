@@ -13,8 +13,8 @@
 	ldadm user {show|suspend|restore|delete} [USERNAME…]
 	ldadm user add [-r] [USERNAME]
 	ldadm user rename OLDNAME NEWNAME
-	ldadm user keys list USERNAME
-	ldadm user keys {delete|add} [-f FILENAME] USERNAME
+	ldadm user key list USERNAME
+	ldadm user key {delete|add} [-f FILENAME] USERNAME
 
 ### List commands
 
