@@ -31,18 +31,28 @@ sp_user = p_user.add_subparsers(title = "User command")
 
 sp_user.add_parser("list")
 
-p_user_search = sp_user.add_parser("search", aliases = ["find", "grep"])
+p_user_search = sp_user.add_parser("search",
+        aliases = ["find", "grep"])
+
 p_user_search.add_argument("pattern",
         metavar = "PATTERN",
         help = "Search pattern")
 
 sp_user.add_parser("show",
         aliases = ["info"],
-        help = "Show details for the account(s)")
+        help = "Show details for the accounts")
 
-p_user_restore = sp_user.add_parser("restore", aliases = ["unlock", "unban", "enable"])
+p_user_suspend = sp_user.add_parser("suspend",
+        aliases = ["lock", "ban", "disable"],
+        help = "Make the accounts inactive")
 
-p_user_suspend = sp_user.add_parser("suspend", aliases = ["lock", "ban", "disable"])
+p_user_restore = sp_user.add_parser("restore",
+        aliases = ["unlock", "unban", "enable"],
+        help = "Re-activate the accounts")
+
+p_user_delete = sp_user.add_parser("add",
+        aliases = ["create"],
+        help = "Add a new account")
 
 # List commands
 
