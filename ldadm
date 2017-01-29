@@ -28,16 +28,19 @@ modes = ap.add_subparsers(title = "Objects to manage")
 
 user_parser = modes.add_parser("user",
         help = "User accounts")
+user_parser.set_defaults(class_name = "UserCommand")
 
 user = user_parser.add_subparsers(title = "User command")
 
-user.add_parser("list")
+p = user.add_parser("list")
+p.set_defaults(method_name = "list_users")
 
 search = user.add_parser("search",
         aliases = ["find", "grep"])
 search.add_argument("pattern",
         metavar = "PATTERN",
         help = "Search pattern")
+search.set_defaults(method_name = "search")
 
 # User commands that accept zero or more UIDs
 
@@ -47,25 +50,29 @@ multi_user_parser.add_argument("username",
         nargs = "*",
         help = "One or more UIDs. If omitted, read from stdin.")
 
-user.add_parser("show",
+p = user.add_parser("show",
         aliases = ["info"],
         parents = [multi_user_parser],
         help = "Show details for accounts")
+p.set_defaults(method_name = "show")
 
-user.add_parser("suspend",
+p = user.add_parser("suspend",
         aliases = ["lock", "ban", "disable"],
         parents = [multi_user_parser],
         help = "Make accounts inactive")
+p.set_defaults(method_name = "suspend")
 
-user.add_parser("restore",
+p = user.add_parser("restore",
         aliases = ["unlock", "unban", "enable"],
         parents = [multi_user_parser],
         help = "Re-activate accounts")
+p.set_defaults(method_name = "restore")
 
-user.add_parser("delete",
+p = user.add_parser("delete",
         aliases = ["remove"],
         parents = [multi_user_parser],
         help = "Irreversibly destroy accounts")
+p.set_defaults(method_name = "delete")
 
 # Other user commands
 
@@ -76,6 +83,7 @@ user_add.add_argument("username",
         metavar = "USERNAME",
         nargs = '?',
         help = "Account UID")
+user_add.set_defaults(method_name = "add")
 
 user_rename = user.add_parser("rename",
         help = "Change account UID")
@@ -85,6 +93,7 @@ user_rename.add_argument("oldname",
 user_rename.add_argument("newname",
         metavar = "NEWNAME",
         help = "New UID")
+user_rename.set_defaults(method_name = "rename")
 
 # Public key commands
 
@@ -104,26 +113,32 @@ key_from_file.add_argument("-f", "--file",
         nargs = 1,
         help = "Read public key from file")
 
-key.add_parser("list",
+p = key.add_parser("list",
         aliases = ["show"],
         parents = [single_user_parser],
         help = "List public keys for a user")
+p.set_defaults(method_name = "list_keys")
 
-key.add_parser("add",
+p = key.add_parser("add",
         aliases = ["create"],
         parents = [single_user_parser, key_from_file],
         help = "Add a public key to a user")
+p.set_defaults(method_name = "add_key")
 
-key.add_parser("delete",
+p = key.add_parser("delete",
         aliases = ["remove"],
         parents = [single_user_parser, key_from_file],
         help = "Remove a public key from a user")
+p.set_defaults(method_name = "delete_key")
 
 # List commands
 
-p_list = modes.add_parser("list",
+list_parser = modes.add_parser("list",
         help = "Mailing lists")
+list_parser.set_defaults(class_name = "ListCommand")
 
-ap.parse_args()
+args = ap.parse_args()
 
-cfg = Settings()
+logging.basicConfig(level = log_levels[args.log_level])
+
+logging.debug("Invoking %s.%s" % (args.class_name, args.method_name))
