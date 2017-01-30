@@ -1,9 +1,8 @@
 #!/usr/bin/python3
-import ldap3
 import argparse
 import logging
 
-from settings import Settings
+from commands import UserCommand
 
 log_levels = {
     "CRITICAL": logging.CRITICAL,
@@ -142,3 +141,11 @@ args = ap.parse_args()
 logging.basicConfig(level = log_levels[args.log_level])
 
 logging.debug("Invoking %s.%s" % (args.class_name, args.method_name))
+
+try:
+    command_instance = globals()[args.class_name](args)
+except Exception as e:
+    sys.exit(str(e))
+
+handler = getattr(command_instance, args.method_name)
+handler()
