@@ -145,8 +145,7 @@ logging.debug("Invoking %s.%s" % (args.class_name, args.method_name))
 
 try:
     command_instance = globals()[args.class_name](args)
+    ldadm = getattr(command_instance, args.method_name)
+    ldadm()
 except Exception as e:
     sys.exit(str(e))
-
-handler = getattr(command_instance, args.method_name)
-handler()
