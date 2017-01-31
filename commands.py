@@ -102,11 +102,13 @@ class UserCommand(Command):
         self.cfg = self._full_config[__class__.config_section]
 
     def list_users(self):
-        self._ldap.search(
-                search_base = cfg_user["base"], 
-                search_filter = cfg_user["filter"],
-                search_scope = get_scope(cfg_user["scope"]),
-                attributes = cfg_user["id_attr"])
+        generator = self._ldap.extend.standard.paged_search(
+                search_base = self.cfg["base"], 
+                search_filter = self.cfg["filter"],
+                search_scope = get_scope(self.cfg["scope"]),
+                attributes = [self.cfg["id_attr"]])
+        for entry in generator:
+            print(entry["attributes"][self.cfg["id_attr"]][0])
 
 #    def search(self):
 #    def show(self):
