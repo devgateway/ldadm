@@ -24,13 +24,14 @@ def get_scope(scope_str):
 class Command:
     def __init__(self, args):
         self._args = args
-        self._cfg = self._load_config()
-        cfg_ldap = cfg["ldap"]
+        self._full_config = self._load_config()
+        cfg_ldap = self._full_config["ldap"]
         self._ldap = ldap3.Connection(
                 server = cfg_ldap["uri"],
                 user = cfg_ldap["binddn"],
                 password = cfg_ldap["bindpw"],
                 raise_exceptions = True)
+        self._ldap.bind()
 
     def _load_config(self):
         try:
@@ -92,13 +93,15 @@ class Command:
             raise ConfigException(msg) from key
 
 class UserCommand(Command):
+    config_section = "user"
+    required_settings = ["id_attr"]
+
     def __init__(self, args):
-        super(__class__, self).__init__(self, args)
-        self.cfg = self._cfg["user"]
-        for key in ("base"
+        super(__class__, self).__init__(args)
+        self._validate_section()
+        self.cfg = self._full_config[__class__.config_section]
 
     def list_users(self):
-        cfg_user = self._cfg["user"]
         self._ldap.search(
                 search_base = cfg_user["base"], 
                 search_filter = cfg_user["filter"],
