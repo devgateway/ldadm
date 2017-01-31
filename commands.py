@@ -15,8 +15,9 @@ def get_scope(scope_str):
             }
     try:
         scope = ldap_scopes[scope_str.lower()]
-    except KeyError:
-        raise ConfigException("Expected scope base|one|sub, got %s" % scope_str)
+    except KeyError as key:
+        msg = "Expected scope base|one|sub, got '%s'" % scope_str
+        raise ConfigException(msg) from key
 
     return scope
 
@@ -42,23 +43,53 @@ class Command:
             logging.debug("Loading config from %s" % cfg_path)
             cfg_file = open(cfg_path)
         except OSError as err:
-            raise ConfigException("Config file '%s': %s" % (err.filename, err.strerror))
+            msg = "Config file '%s': %s" % (err.filename, err.strerror)
+            raise ConfigException(msg) from err
 
         cfg = yaml.safe_load(cfg_file)
 
         # validate server config
-        if "ldap" not in cfg:
-            raise ConfigException("Missing 'ldap' dict from config")
-        if "uri" not in cfg["ldap"]:
-            raise ConfigException("Missing 'uri' string from 'ldap' dict in config")
+        try:
+            if "uri" not in cfg["ldap"]:
+                raise ConfigException("Missing 'uri' from dict 'ldap' in config")
+        except KeyError as key:
+                raise ConfigException("Missing dict 'ldap' from config") from key
 
-        if "binddn" not in cfg["ldap"]:
+        try:
+            cfg["ldap"]["binddn"]
+            cfg["ldap"]["bindpw"]
+        except KeyError:
             cfg["ldap"]["binddn"] = None
             cfg["ldap"]["bindpw"] = None
 
         return cfg
 
-    def _validate_config(self, section, keys):
+    def _validate_section(self):
+        try:
+            section = self._full_config[self.config_section]
+        except KeyError as key:
+            msg = "Missing section %s from config", str(key)
+            raise ConfigException(msg) from key
+
+        if type(section) is not dict:
+            msg = "'%s' must be a dict in config" % self.config_section
+            raise ConfigException(msg)
+
+        keys = ["filter", "base", "scope"]
+        if self.required_settings:
+            keys.extend(self.required_settings)
+
+        try:
+            for key in keys:
+                if section[key] == "":
+                    msg = "Empty value of '%s' in section '%s' in config" % \
+                            (key, self.config_section)
+                    raise ConfigException(msg)
+
+        except KeyError as key:
+            msg = "Missing member %s from section '%s' in config" % \
+                    (str(key), self.config_section)
+            raise ConfigException(msg) from key
 
 class UserCommand(Command):
     def __init__(self, args):
