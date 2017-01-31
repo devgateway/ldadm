@@ -49,9 +49,9 @@ class Command:
 
         # validate server config
         if "ldap" not in cfg:
-            raise ConfigException("Missing 'ldap' dict from config"))
+            raise ConfigException("Missing 'ldap' dict from config")
         if "uri" not in cfg["ldap"]:
-            raise ConfigException("Missing 'uri' string from 'ldap' dict in config"))
+            raise ConfigException("Missing 'uri' string from 'ldap' dict in config")
 
         if "binddn" not in cfg["ldap"]:
             cfg["ldap"]["binddn"] = None
