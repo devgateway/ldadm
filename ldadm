@@ -36,10 +36,10 @@ p = user.add_parser("list")
 p.set_defaults(method_name = "list_users")
 
 search = user.add_parser("search",
-        aliases = ["find", "grep"])
-search.add_argument("pattern",
-        metavar = "PATTERN",
-        help = "Search pattern")
+        aliases = ["find"])
+search.add_argument("filter",
+        metavar = "FILTER",
+        help = "Search filter")
 search.set_defaults(method_name = "search")
 
 # User commands that accept zero or more UIDs
