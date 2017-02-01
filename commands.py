@@ -4,22 +4,34 @@ import ldap3
 
 import settings
 
+def scope(scope_str):
+    scopes = {
+            "base": ldap3.BASE,
+            "one": ldap3.LEVEL,
+            "sub": ldap3.SUBTREE
+            }
+    try:
+        return scopes[scope_str.lower()]
+    except KeyError as key:
+        msg = "Scope must be %s, not '%s'" % ("|".join(scopes), scope_str)
+        raise ValueError(msg) from key
+
 class Command:
     def __init__(self, args):
         self._args = args
 
         self._cfg = settings.Config()
-        cfg = self._cfg.ldap
+        ldap = self._cfg.ldap
 
         try:
-            binddn = cfg.binddn
-            bindpw = cfg.bindpw
+            binddn = ldap.binddn
+            bindpw = ldap.bindpw
         except AttributeError:
             binddn = None
             bindpw = None
 
         self._ldap = ldap3.Connection(
-                server = cfg.uri,
+                server = ldap.uri,
                 user = binddn,
                 password = bindpw,
                 raise_exceptions = True)
@@ -27,15 +39,14 @@ class Command:
 
 class UserCommand(Command):
     def list_users(self):
-        search = settings.LdapSearch(self._cfg.user)
-        attr = self._cfg.user.attr
+        user = self._cfg.user
         generator = self._ldap.extend.standard.paged_search(
-                search_base = search.base,
-                search_filter = search.filter,
-                search_scope = search.scope,
-                attributes = [attr])
+                search_base = user.base,
+                search_filter = user.filter,
+                search_scope = scope(user.scope),
+                attributes = [user.attr])
         for entry in generator:
-            print(entry["attributes"][attr][0])
+            print(entry["attributes"][user.attr][0])
 
 #    def search(self):
 #    def show(self):

@@ -2,8 +2,6 @@ import logging
 import os
 import copy
 
-import ldap3
-
 import yaml
 
 class ConfigAttrError(AttributeError):
@@ -31,18 +29,6 @@ class Config:
             msg = "Config file '%s': %s" % (err.filename, err.strerror)
             raise ConfigException(msg) from err
 
-    def _scope(self, scope):
-        scopes = {
-                "base": ldap3.BASE,
-                "one": ldap3.LEVEL,
-                "sub": ldap3.SUBTREE
-                }
-        try:
-            return scopes[scope.lower()]
-        except KeyError as key:
-            msg = "%s.scope must be %s, not '%s'" % (self, "|".join(scopes), scope)
-            raise ValueError(msg) from key
-
     def __getattr__(self, name):
         try:
             attr = self._cfg[name]
@@ -60,10 +46,7 @@ class Config:
         elif attr is None:
             raise ConfigAttrError(self._attr_name(name))
         else:
-            if name == "scope":
-                return self._scope(attr)
-            else:
-                return attr
+            return attr
 
     def _get_path(self):
         if self._parent:
@@ -82,7 +65,3 @@ class Config:
 
     def __str__(self):
         return self._attr_name()
-
-class LdapSearch(Config):
-    def __init__(self, config):
-        self._cfg = config._cfg
