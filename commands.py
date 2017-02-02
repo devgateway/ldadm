@@ -25,14 +25,21 @@ def pretty_print(entry):
 
     for key in sorted(attrs):
         values = attrs[key]
-        first_value = values.pop(0)
-        print( formatter.format(key + ":", str(first_value)) )
-        for value in values:
-            print( formatter.format("", str(value)) )
+        if type(values) is list:
+            first_value = values.pop(0)
+            print( formatter.format(key + ":", str(first_value)) )
+            for value in values:
+                print( formatter.format("", str(value)) )
+
+        else:
+            print( formatter.format(key + ":", str(values)) )
 
     print()
 
 longest_str = lambda x, y: x if len(x) > len(y) else y
+
+class NotFound(Exception):
+    pass
 
 class Command:
     def __init__(self, args):
@@ -79,6 +86,23 @@ class UserCommand(Command):
         for entry in entries:
             print(entry["attributes"][user.attr][0])
 
+    def _get_single_entry(self, username, attrs = None):
+        user = self._cfg.user
+        filt = "(%s=%s)" % (user.attr, username)
+
+        logging.debug("Search '%s' in '%s' scope %s" % (filt, user.base, user.scope))
+        generator = self._ldap.search(
+                search_base = user.base,
+                search_filter = filt,
+                search_scope = scope(user.scope),
+                attributes = attrs,
+                size_limit = 1)
+
+        if self._ldap.response:
+            return self._ldap.response[0]
+        else:
+            raise NotFound("User %s not found" % username)
+
     def list_users(self):
         self._search_users("(%s=*)" % self._cfg.user.attr)
 
@@ -87,23 +111,12 @@ class UserCommand(Command):
 
     def show(self):
         for username in self._args_or_stdin("username"):
-            user = self._cfg.user
-            filt = "(%s=%s)" % (user.attr, username)
-
-            logging.debug("Search '%s' in '%s' scope %s" % (filt, user.base, user.scope))
-            generator = self._ldap.extend.standard.paged_search(
-                    search_base = user.base,
-                    search_filter = filt,
-                    search_scope = scope(user.scope),
-                    attributes = ldap3.ALL_ATTRIBUTES)
-
-            found = False
-            for entry in generator:
-                found = True
+            try:
+                entry = self._get_single_entry(username, ldap3.ALL_ATTRIBUTES)
                 pretty_print(entry)
+            except NotFound as err:
+                logging.error(err)
 
-            if not found:
-                logging.error("User %s not found" % username)
 
 #    def suspend(self):
 #    def restore(self):
