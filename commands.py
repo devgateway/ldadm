@@ -72,7 +72,20 @@ class UserCommand(Command):
         for entry in generator:
             print(entry["attributes"][user.attr][0])
 
-#    def show(self):
+    def show(self):
+        for username in self._args_or_stdin("username"):
+            user = self._cfg.user
+            filt = "(%s=%s)" % (user.attr, username)
+
+            generator = self._ldap.extend.standard.paged_search(
+                    search_base = user.base,
+                    search_filter = filt,
+                    search_scope = scope(user.scope),
+                    attributes = ldap3.ALL_ATTRIBUTES)
+
+            for entry in generator:
+                pretty_print(entry)
+
 #    def suspend(self):
 #    def restore(self):
 #    def delete(self):
