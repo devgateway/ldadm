@@ -68,26 +68,22 @@ class Command:
                     yield line[:-1]
 
 class UserCommand(Command):
-    def list_users(self):
+    def _search_users(self, filt):
         user = self._cfg.user
-        generator = self._ldap.extend.standard.paged_search(
-                search_base = user.base,
-                search_filter = user.filter,
-                search_scope = scope(user.scope),
-                attributes = [user.attr])
-        for entry in generator:
-            print(entry["attributes"][user.attr][0])
-
-    def search(self):
-        user = self._cfg.user
-        filt = self._args.filter
-        generator = self._ldap.extend.standard.paged_search(
+        logging.debug("Search '%s' in '%s' scope %s" % (filt, user.base, user.scope))
+        entries = self._ldap.extend.standard.paged_search(
                 search_base = user.base,
                 search_filter = filt,
                 search_scope = scope(user.scope),
-                attributes = [user.attr])
-        for entry in generator:
+                attributes = user.attr)
+        for entry in entries:
             print(entry["attributes"][user.attr][0])
+
+    def list_users(self):
+        self._search_users("(%s=*)" % self._cfg.user.attr)
+
+    def search(self):
+        self._search_users(self._args.filter)
 
     def show(self):
         for username in self._args_or_stdin("username"):
