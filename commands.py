@@ -1,5 +1,6 @@
 import logging
 import sys
+import functools
 
 import ldap3
 
@@ -16,6 +17,22 @@ def scope(scope_str):
     except KeyError as key:
         msg = "Scope must be %s, not '%s'" % ("|".join(scopes), scope_str)
         raise ValueError(msg) from key
+
+def pretty_print(entry):
+    attrs = entry["attributes"]
+    width = len( functools.reduce(longest_str, attrs) ) + 1
+    formatter = "{:%is} {:s}" % width
+    logging.debug(formatter)
+
+    for (key, values) in attrs.items():
+        first_value = values.pop(0)
+        print( formatter.format(key + ":", str(first_value)) )
+        for value in values:
+            print( formatter.format("", str(value)) )
+
+    print()
+
+longest_str = lambda x, y: x if len(x) > len(y) else y
 
 class Command:
     def __init__(self, args):
