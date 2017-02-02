@@ -22,9 +22,9 @@ def pretty_print(entry):
     attrs = entry["attributes"]
     width = len( functools.reduce(longest_str, attrs) ) + 1
     formatter = "{:%is} {:s}" % width
-    logging.debug(formatter)
 
-    for (key, values) in attrs.items():
+    for key in sorted(attrs):
+        values = attrs[key]
         first_value = values.pop(0)
         print( formatter.format(key + ":", str(first_value)) )
         for value in values:
@@ -94,6 +94,7 @@ class UserCommand(Command):
             user = self._cfg.user
             filt = "(%s=%s)" % (user.attr, username)
 
+            logging.debug("Search '%s' in '%s' scope %s" % (filt, user.base, user.scope))
             generator = self._ldap.extend.standard.paged_search(
                     search_base = user.base,
                     search_filter = filt,
