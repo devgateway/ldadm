@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import ldap3
 
@@ -36,6 +37,18 @@ class Command:
                 password = bindpw,
                 raise_exceptions = True)
         self._ldap.bind()
+
+    def _args_or_stdin(self, argname):
+        args = getattr(self._args, argname)
+        if args:
+            if not sys.__stdin__.isatty():
+                logging.warning("Standard input ignored, because arguments are present")
+            for arg in args:
+                yield arg
+        else:
+            with sys.__stdin__ as stdin:
+                for line in stdin:
+                    yield line[:-1]
 
 class UserCommand(Command):
     def list_users(self):
