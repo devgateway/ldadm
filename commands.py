@@ -101,8 +101,13 @@ class UserCommand(Command):
                     search_scope = scope(user.scope),
                     attributes = ldap3.ALL_ATTRIBUTES)
 
+            found = False
             for entry in generator:
+                found = True
                 pretty_print(entry)
+
+            if not found:
+                logging.error("User %s not found" % username)
 
 #    def suspend(self):
 #    def restore(self):
