@@ -86,13 +86,17 @@ class UserCommand(Command):
         for entry in entries:
             print(entry["attributes"][user.attr][0])
 
-    def _get_single_entry(self, username, attrs = None):
+    def _get_single_entry(self, username, active = True, attrs = None):
         user = self._cfg.user
         filt = "(%s=%s)" % (user.attr, username)
+        if active:
+            base = user.base
+        else:
+            base = self._cfg.suspended.base
 
         logging.debug("Search '%s' in '%s' scope %s" % (filt, user.base, user.scope))
         generator = self._ldap.search(
-                search_base = user.base,
+                search_base = base,
                 search_filter = filt,
                 search_scope = scope(user.scope),
                 attributes = attrs,
@@ -101,7 +105,9 @@ class UserCommand(Command):
         if self._ldap.response:
             return self._ldap.response[0]
         else:
-            raise NotFound("User %s not found" % username)
+            msg = "User %s not found" % username
+            logging.error(msg)
+            raise NotFound(msg)
 
     def list_users(self):
         self._search_users("(%s=*)" % self._cfg.user.attr)
@@ -112,10 +118,10 @@ class UserCommand(Command):
     def show(self):
         for username in self._args_or_stdin("username"):
             try:
-                entry = self._get_single_entry(username, ldap3.ALL_ATTRIBUTES)
+                entry = self._get_single_entry(username, attrs = ldap3.ALL_ATTRIBUTES)
                 pretty_print(entry)
             except NotFound as err:
-                logging.error(err)
+                pass
 
 
 #    def suspend(self):
