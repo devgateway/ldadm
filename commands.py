@@ -74,6 +74,27 @@ class Command:
                 for line in stdin:
                     yield line[:-1]
 
+    def _move_entry(self, dn, new_superior):
+        rdn = "+".join( ldap3.utils.dn.safe_rdn(dn) )
+        logging.debug("Moving %s to %s, keeping RDN %s" % (dn, new_superior, rdn))
+        self._ldap.modify_dn(
+                dn = dn,
+                relative_dn = rdn,
+                new_superior = new_superior)
+
+    def _rename_entry(self, dn, attr, new_val):
+        rdns = ldap3.utils.dn.safe_rdn(dn, decompose = True)
+        new_rdns = []
+        for rdn in rdns:
+            if rdn[0] == attr:
+                new_rdns.append( (rdn[0], new_val) )
+            else:
+                new_rdns.append(rdn)
+
+        new_rdn = "+".join(new_rdns)
+        logging.debug("Renaming %s to RDN %s" % (dn, new_rdn))
+        self._ldap.modify_dn(dn = dn, relative_dn = new_rdn)
+
 class UserCommand(Command):
     def _search_users(self, filt):
         user = self._cfg.user
@@ -123,9 +144,16 @@ class UserCommand(Command):
             except NotFound as err:
                 pass
 
+    def suspend(self):
+        for username in self._args_or_stdin("username"):
+            dn = self._get_single_entry(username)["dn"]
+            self._move_entry(dn, self._cfg.suspended.base)
 
-#    def suspend(self):
-#    def restore(self):
+    def restore(self):
+        for username in self._args_or_stdin("username"):
+            dn = self._get_single_entry(username, active = False)["dn"]
+            self._move_entry(dn, self._cfg.user.base)
+
 #    def delete(self):
 #    def add(self):
 #    def rename(self):
