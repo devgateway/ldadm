@@ -19,6 +19,14 @@ def scope(scope_str):
         raise ValueError(msg) from key
 
 def pretty_print(entry):
+    def output(k, v):
+        try:
+            s = v.decode("utf-8")
+        except AttributeError:
+            s = str(v)
+
+        print(formatter.format(k, s))
+
     attrs = entry["attributes"]
     width = len( functools.reduce(longest_str, attrs) ) + 1
     formatter = "{:%is} {:s}" % width
@@ -27,12 +35,12 @@ def pretty_print(entry):
         values = attrs[key]
         if type(values) is list:
             first_value = values.pop(0)
-            print( formatter.format(key + ":", str(first_value)) )
+            output(key + ":", first_value)
             for value in values:
-                print( formatter.format("", str(value)) )
+                output("", value)
 
         else:
-            print( formatter.format(key + ":", str(values)) )
+            output(key + ":", values)
 
     print()
 
