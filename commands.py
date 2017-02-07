@@ -103,6 +103,10 @@ class Command:
         logging.debug("Renaming %s to RDN %s" % (dn, new_rdn))
         self._ldap.modify_dn(dn = dn, relative_dn = new_rdn)
 
+    def _delete_entry(self, dn):
+        logging.debug("Deleting %s" % dn)
+        self._ldap.delete(dn)
+
 class UserCommand(Command):
     def _search_users(self, filt):
         user = self._cfg.user
@@ -167,7 +171,11 @@ class UserCommand(Command):
             dn = self._get_single_entry(username, active = False)["dn"]
             self._move_entry(dn, self._cfg.user.base)
 
-#    def delete(self):
+    def delete(self):
+        for username in self._args_or_stdin("username"):
+            dn = self._get_single_entry(username, active = False)["dn"]
+            self._delete_entry(dn)
+
 #    def add(self):
 #    def rename(self):
 #    def list_keys(self):
