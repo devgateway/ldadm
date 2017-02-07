@@ -32,10 +32,17 @@ user_parser.set_defaults(class_name = "UserCommand")
 
 user = user_parser.add_subparsers(title = "User command")
 
-p = user.add_parser("list")
+only_suspended = argparse.ArgumentParser(add_help = False)
+only_suspended.add_argument("--suspended",
+        action = "store_true",
+        help = "Only include suspended users")
+
+p = user.add_parser("list",
+        parents = [only_suspended])
 p.set_defaults(method_name = "list_users")
 
 search = user.add_parser("search",
+        parents = [only_suspended],
         aliases = ["find"])
 search.add_argument("filter",
         metavar = "FILTER",

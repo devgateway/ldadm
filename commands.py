@@ -106,9 +106,14 @@ class Command:
 class UserCommand(Command):
     def _search_users(self, filt):
         user = self._cfg.user
-        logging.debug("Search '%s' in '%s' scope %s" % (filt, user.base, user.scope))
+        if self._args.suspended:
+            base = self._cfg.suspended.base
+        else:
+            base = user.base
+
+        logging.debug("Search '%s' in '%s' scope %s" % (filt, base, user.scope))
         entries = self._ldap.extend.standard.paged_search(
-                search_base = user.base,
+                search_base = base,
                 search_filter = filt,
                 search_scope = scope(user.scope),
                 attributes = user.attr)
