@@ -154,14 +154,17 @@ class UserCommand(Command):
         umax = user.uid.max
         attr = user.uid.attr_num
 
-        steps = 50
+        steps = 50 # subranges of umin--umax, candidates for the unique UID
         def ranged_random(step):
+            """Generate a random int in each subrange umin--umax"""
             step_size = int((umax - umin) / steps)
             return umin + step_size * step + random.randint(0, step_size)
 
+        # make a list random unique ints, one per subrange
         nuids = list( map(ranged_random, range(steps)) )
 
         def remove_collisions(base):
+            """Find existing UIDs and remove them from the candidate UID list"""
             conditions = map(lambda n: "(%s=%i)" % (attr, n), nuids)
             filt = "(|%s)" % "".join(conditions)
 
@@ -176,10 +179,12 @@ class UserCommand(Command):
                 nuids.remove(collision)
                 logging.debug("UID collision %i skipped" % collision)
 
+        # find existing UIDs, and remove them from the list of candidates
         remove_collisions(user.base)
         remove_collisions(self._cfg.suspended.base)
 
         if nuids:
+            # randomly return one of the remaining candidates
             return nuids[random.randrange(0, len(nuids))]
         else:
             raise NotFound("Couldn't find a unique UID in %i attempts" % steps)
