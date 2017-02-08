@@ -1,6 +1,7 @@
 import logging
 import sys
 import functools
+import random
 
 import ldap3
 
@@ -146,6 +147,42 @@ class UserCommand(Command):
             msg = "User %s not found" % username
             logging.error(msg)
             raise NotFound(msg)
+
+    def _get_unique_id_number(self):
+        user = self._cfg.user
+        umin = user.uid.min
+        umax = user.uid.max
+        attr = user.uid.attr_num
+
+        steps = 50
+        def ranged_random(step):
+            step_size = int((umax - umin) / steps)
+            return umin + step_size * step + random.randint(0, step_size)
+
+        nuids = list( map(ranged_random, range(steps)) )
+
+        def remove_collisions(base):
+            conditions = map(lambda n: "(%s=%i)" % (attr, n), nuids)
+            filt = "(|%s)" % "".join(conditions)
+
+            logging.debug("Searching for UID collisions in '%s'" % base)
+            entries = self._ldap.extend.standard.paged_search(
+                    search_base = base,
+                    search_filter = filt,
+                    search_scope = scope(user.scope),
+                    attributes = attr)
+            for entry in entries:
+                collision = entry["attributes"][attr]
+                nuids.remove(collision)
+                logging.debug("UID collision %i skipped" % collision)
+
+        remove_collisions(user.base)
+        remove_collisions(self._cfg.suspended.base)
+
+        if nuids:
+            return nuids[random.randrange(0, len(nuids))]
+        else:
+            raise NotFound("Couldn't find a unique UID in %i attempts" % steps)
 
     def list_users(self):
         self._search_users("(%s=*)" % self._cfg.user.uid.attr)
