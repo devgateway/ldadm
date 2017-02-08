@@ -120,13 +120,13 @@ class UserCommand(Command):
                 search_base = base,
                 search_filter = filt,
                 search_scope = scope(user.scope),
-                attributes = user.attr)
+                attributes = user.uid.attr)
         for entry in entries:
-            print(entry["attributes"][user.attr][0])
+            print(entry["attributes"][user.uid.attr][0])
 
     def _get_single_entry(self, username, active = True, attrs = None):
         user = self._cfg.user
-        filt = "(%s=%s)" % (user.attr, username)
+        filt = "(%s=%s)" % (user.uid.attr, username)
         if active:
             base = user.base
         else:
@@ -148,7 +148,7 @@ class UserCommand(Command):
             raise NotFound(msg)
 
     def list_users(self):
-        self._search_users("(%s=*)" % self._cfg.user.attr)
+        self._search_users("(%s=*)" % self._cfg.user.uid.attr)
 
     def search(self):
         self._search_users(self._args.filter)
