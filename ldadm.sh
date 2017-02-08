@@ -27,6 +27,17 @@ _ldadm() {
 					suspended=$(ldadm user list --suspended)
 					COMPREPLY=($(compgen -W "$active $suspended" -- $cur))
 					;;
+				add|create)
+					case "$COMP_CWORD" in
+						3)
+							COMPREPLY=($(compgen -W "-t --template $active" -- $cur))
+							;;
+						4)
+							active=$(ldadm user list)
+							COMPREPLY=($(compgen -W "$active" -- $cur))
+							;;
+					esac
+					;;
 				rename)
 					if [[ $COMP_CWORD -eq 3 ]]; then
 						active=$(ldadm user list)

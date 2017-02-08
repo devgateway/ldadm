@@ -86,11 +86,12 @@ p.set_defaults(method_name = "delete")
 user_add = user.add_parser("add",
         aliases = ["create"],
         help = "Add a new account")
-user_add.add_argument("username",
-        metavar = "USERNAME",
-        nargs = '?',
-        help = "Account UID")
 user_add.set_defaults(method_name = "add")
+user_add.add_argument("-t", "--template",
+        dest = "template",
+        metavar = "USERNAME",
+        nargs = 1,
+        help = "Suggest defaults from an existing user")
 
 user_rename = user.add_parser("rename",
         help = "Change account UID")
