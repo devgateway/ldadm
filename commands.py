@@ -48,7 +48,8 @@ def pretty_print(entry):
 longest_str = lambda x, y: x if len(x) > len(y) else y
 
 class NotFound(Exception):
-    pass
+    def log(self):
+        logging.error( str(self) )
 
 class Command:
     def __init__(self, args):
@@ -144,9 +145,7 @@ class UserCommand(Command):
         if self._ldap.response:
             return self._ldap.response[0]
         else:
-            msg = "User %s not found" % username
-            logging.error(msg)
-            raise NotFound(msg)
+            raise NotFound("User %s not found" % username)
 
     def _get_unique_id_number(self):
         user = self._cfg.user
@@ -201,7 +200,7 @@ class UserCommand(Command):
                 entry = self._get_single_entry(username, attrs = ldap3.ALL_ATTRIBUTES)
                 pretty_print(entry)
             except NotFound as err:
-                pass
+                err.log()
 
     def suspend(self):
         for username in self._args_or_stdin("username"):
