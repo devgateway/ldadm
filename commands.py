@@ -113,28 +113,28 @@ class UserCommand(Command):
     def _search_users(self, filt):
         user = self._cfg.user
         if self._args.suspended:
-            base = self._cfg.suspended.base
+            base = user.base.suspended
         else:
-            base = user.base
+            base = user.base.active
 
         logging.debug("Search '%s' in '%s' scope %s" % (filt, base, user.scope))
         entries = self._ldap.extend.standard.paged_search(
                 search_base = base,
                 search_filter = filt,
                 search_scope = scope(user.scope),
-                attributes = user.uid.attr)
+                attributes = user.attr.uid)
         for entry in entries:
-            print(entry["attributes"][user.uid.attr][0])
+            print(entry["attributes"][user.attr.uid][0])
 
     def _get_single_entry(self, username, active = True, attrs = None):
         user = self._cfg.user
-        filt = "(%s=%s)" % (user.uid.attr, username)
+        filt = "(%s=%s)" % (user.attr.uid, username)
         if active:
-            base = user.base
+            base = user.base.active
         else:
-            base = self._cfg.suspended.base
+            base = user.base.suspended
 
-        logging.debug("Search '%s' in '%s' scope %s" % (filt, user.base, user.scope))
+        logging.debug("Search '%s' in '%s' scope %s" % (filt, base, user.scope))
         generator = self._ldap.search(
                 search_base = base,
                 search_filter = filt,
@@ -149,9 +149,9 @@ class UserCommand(Command):
 
     def _get_unique_id_number(self):
         user = self._cfg.user
-        umin = user.uid.min
-        umax = user.uid.max
-        attr = user.uid.attr_num
+        umin = user.nuid.min
+        umax = user.nuid.max
+        attr = user.attr.nuid
 
         steps = 50 # subranges of umin--umax, candidates for the unique UID
         def ranged_random(step):
@@ -179,8 +179,8 @@ class UserCommand(Command):
                 logging.debug("UID collision %i skipped" % collision)
 
         # find existing UIDs, and remove them from the list of candidates
-        remove_collisions(user.base)
-        remove_collisions(self._cfg.suspended.base)
+        remove_collisions(user.base.active)
+        remove_collisions(user.base.suspended)
 
         if nuids:
             # randomly return one of the remaining candidates
@@ -189,7 +189,7 @@ class UserCommand(Command):
             raise NotFound("Couldn't find a unique UID in %i attempts" % steps)
 
     def list_users(self):
-        self._search_users("(%s=*)" % self._cfg.user.uid.attr)
+        self._search_users("(%s=*)" % self._cfg.user.attr.uid)
 
     def search(self):
         self._search_users(self._args.filter)
@@ -205,12 +205,12 @@ class UserCommand(Command):
     def suspend(self):
         for username in self._args_or_stdin("username"):
             dn = self._get_single_entry(username)["dn"]
-            self._move_entry(dn, self._cfg.suspended.base)
+            self._move_entry(dn, self._cfg.user.base.suspended)
 
     def restore(self):
         for username in self._args_or_stdin("username"):
             dn = self._get_single_entry(username, active = False)["dn"]
-            self._move_entry(dn, self._cfg.user.base)
+            self._move_entry(dn, self._cfg.user.base.active)
 
     def delete(self):
         for username in self._args_or_stdin("username"):
