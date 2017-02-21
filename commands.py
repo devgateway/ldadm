@@ -109,6 +109,26 @@ class Command:
         logging.debug("Deleting %s" % dn)
         self._ldap.delete(dn)
 
+    def _input_entry(self, objectclass, templates):
+        if self._args.template:
+            entry = self._get_single_entry(self._args.template, attrs = ldap3.ALL_ATTRIBUTES)
+            attrs = entry["attributes"]
+        else:
+            attrs = []
+
+        templatized = []
+        user_def = ldap3.ObjectDef(objectclass, self._ldap)
+        for attr_def in user_def:
+            if attr_def.mandatory:
+                default = attrs
+                prompt = "%s [%s]: " % (attr_def.key
+                val = input(prompt)
+
+    def _add_entry(self, dn, objectclass, attrs):
+        logging.debug("Adding %s" % dn)
+        self._ldap.add(dn, objectclass, attrs)
+        # TODO: check exit status
+
 class UserCommand(Command):
     def _search_users(self, filt):
         user = self._cfg.user
@@ -188,6 +208,17 @@ class UserCommand(Command):
         else:
             raise NotFound("Couldn't find a unique UID in %i attempts" % steps)
 
+    def _uid_unique(self, uid):
+        # check if UID is unique
+        for active in (True, False):
+            try:
+                self._get_single_entry(uid, active = active)
+                return False
+            except NotFound:
+                pass
+
+        return True
+
     def list_users(self):
         self._search_users("(%s=*)" % self._cfg.user.attr.uid)
 
@@ -217,7 +248,11 @@ class UserCommand(Command):
             dn = self._get_single_entry(username, active = False)["dn"]
             self._delete_entry(dn)
 
-#    def add(self):
+    def add(self):
+        user = self._cfg.user
+        (dn, attrs) = self._input_entry(user.objectclass, user.templates)
+        self._add_entry(dn, user.objectclass, attrs)
+
 #    def rename(self):
 #    def list_keys(self):
     def add_key(self):
