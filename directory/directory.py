@@ -9,12 +9,13 @@ from .config import cfg
 from .ldap import ldap
 
 class DirectoryMapping(MutableMapping):
-    def __init__(self, attrs = None):
+    def __init__(self, base, attrs = None):
+        self._base = base
         self._attrs = attrs
 
     def _getitem(self, id, attrs = None):
         ldap.search(
-                search_base = __class__._base,
+                search_base = self._base,
                 search_filter = "(%s=%s)" % (__class__._id_attr, id),
                 search_scope = __class__._scope,
                 attributes = attrs,
@@ -30,7 +31,7 @@ class DirectoryMapping(MutableMapping):
 
     def search(self, filter):
         return ldap.extend.standard.paged_search(
-                search_base = __class__._base,
+                search_base = self._base,
                 search_filter = filter,
                 search_scope = self._scope,
                 attributes = self._attrs)
@@ -52,6 +53,33 @@ class DirectoryMapping(MutableMapping):
     def __delitem__(self, id):
         dn = self._get_dn(id)
         ldap.delete(dn)
+
+    def move(self, id, dest):
+        if not isinstance(dest, __class__):
+            raise TypeError("Can't move to different object type")
+
+        dn = self._get_dn(id)
+        rdn = "+".join( ldap3.utils.dn.safe_rdn(dn) )
+        ldap.modify_dn(
+                dn = dn,
+                relative_dn = rdn,
+                new_superior = dest._base)
+
+    def rename(self, id, new_id):
+        dn = self._get_dn(id)
+
+        # RDN can be an array: gn=John+sn=Doe
+        rdns = ldap3.utils.dn.safe_rdn(dn, decompose = True)
+        new_rdns = []
+        for rdn in rdns:
+            if rdn[0] == __class__._id_attr:
+                # primary ID element
+                new_rdns.append( (rdn[0], new_val) )
+            else:
+                new_rdns.append(rdn)
+        new_rdn = "+".join(new_rdns)
+
+        self._ldap.modify_dn(dn = dn, relative_dn = new_rdn)
 
 class DirectoryObject:
     def __init__(self, id):
