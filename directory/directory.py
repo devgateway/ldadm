@@ -36,6 +36,9 @@ class DirectoryMapping(MutableMapping):
                 search_scope = self._scope,
                 attributes = self._attrs)
 
+    def __iter__(self):
+        self.search( "(%s=*)" % __class__._id_attr )
+
     def __contains__(self, id):
         try:
             self.__getitem__(id, attrs = None)
@@ -80,6 +83,9 @@ class DirectoryMapping(MutableMapping):
         new_rdn = "+".join(new_rdns)
 
         self._ldap.modify_dn(dn = dn, relative_dn = new_rdn)
+
+    def __len__(self):
+        raise NotImplemented
 
 class DirectoryObject:
     def __init__(self, id):
