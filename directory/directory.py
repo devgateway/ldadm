@@ -45,6 +45,14 @@ class DirectoryMapping(MutableMapping):
     def __getitem__(self, id):
         self._getitem(id, attrs = self._attrs)
 
+    def __setitem__(self, id, entry):
+        dn = self._get_dn(id)
+        ldap.add(dn, object_class = None, attributes = entry)
+
+    def __delitem__(self, id):
+        dn = self._get_dn(id)
+        ldap.delete(dn)
+
 class DirectoryObject:
     def __init__(self, id):
         self._id = id
