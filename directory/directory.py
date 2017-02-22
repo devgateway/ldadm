@@ -25,6 +25,9 @@ class DirectoryMapping(MutableMapping):
         else:
             raise IndexError(id)
 
+    def _get_dn(self, id):
+        return self._getitem(id, attrs = None)["dn"]
+
     def search(self, filter):
         return ldap.extend.standard.paged_search(
                 search_base = __class__._base,
