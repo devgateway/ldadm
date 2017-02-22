@@ -7,6 +7,9 @@ import yaml
 class ConfigAttrError(AttributeError):
     pass
 
+class ConfigException(Exception):
+    pass
+
 class Config:
     def __init__(self):
         self._parent = None
@@ -65,3 +68,5 @@ class Config:
 
     def __str__(self):
         return self._attr_name()
+
+cfg = Config()
