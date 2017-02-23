@@ -6,18 +6,18 @@ except(ImportError):
 import ldap3
 
 from .config import cfg
-from .ldap import ldap
+from .ldap import ldap, scope
 
 class DirectoryMapping(MutableMapping):
-    def __init__(self, base, attrs = None):
+    def __init__(self, base):
         self._base = base
-        self._attrs = attrs
+        self._attrs = None
 
     def _getitem(self, id, attrs = None):
         ldap.search(
                 search_base = self._base,
-                search_filter = "(%s=%s)" % (__class__._id_attr, id),
-                search_scope = __class__._scope,
+                search_filter = "(%s=%s)" % (self.__class__._id_attr, id),
+                search_scope = self.__class__._scope,
                 attributes = attrs,
                 size_limit = 1)
 
@@ -33,21 +33,23 @@ class DirectoryMapping(MutableMapping):
         return ldap.extend.standard.paged_search(
                 search_base = self._base,
                 search_filter = filter,
-                search_scope = self._scope,
+                search_scope = self.__class__._scope,
                 attributes = self._attrs)
 
     def __iter__(self):
-        self.search( "(%s=*)" % __class__._id_attr )
+        filter = "(%s=*)" % self.__class__._id_attr
+        for entry in self.search(filter):
+            yield entry["attributes"][self.__class__._id_attr][0]
 
     def __contains__(self, id):
         try:
-            self.__getitem__(id, attrs = None)
+            self.__getitem__(id)
             return True
         except IndexError:
             return False
 
     def __getitem__(self, id):
-        self._getitem(id, attrs = self._attrs)
+        return self._getitem(id, attrs = self._attrs)
 
     def __setitem__(self, id, entry):
         dn = self._get_dn(id)
@@ -57,8 +59,11 @@ class DirectoryMapping(MutableMapping):
         dn = self._get_dn(id)
         ldap.delete(dn)
 
+    def require_attrs(self, attrs):
+        self._attrs = attrs
+
     def move(self, id, dest):
-        if not isinstance(dest, __class__):
+        if not isinstance(dest, self.__class__):
             raise TypeError("Can't move to different object type")
 
         dn = self._get_dn(id)
@@ -75,7 +80,7 @@ class DirectoryMapping(MutableMapping):
         rdns = ldap3.utils.dn.safe_rdn(dn, decompose = True)
         new_rdns = []
         for rdn in rdns:
-            if rdn[0] == __class__._id_attr:
+            if rdn[0] == self.__class__._id_attr:
                 # primary ID element
                 new_rdns.append( (rdn[0], new_val) )
             else:
