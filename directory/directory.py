@@ -10,9 +10,9 @@ from .config import cfg
 from .ldap import ldap, scope
 
 class DirectoryMapping(MutableMapping):
-    def __init__(self, base):
+    def __init__(self, base, attrs):
         self._base = base
-        self._attrs = None
+        self._attrs = attrs
 
     def _getitem(self, id, attrs = None):
         ldap.search(
@@ -59,9 +59,6 @@ class DirectoryMapping(MutableMapping):
     def __delitem__(self, id):
         dn = self._get_dn(id)
         ldap.delete(dn)
-
-    def require_attrs(self, attrs):
-        self._attrs = attrs
 
     def move(self, id, dest):
         if not isinstance(dest, self.__class__):
@@ -114,12 +111,17 @@ class DirectoryObject():
             raise TypeError
 
     def __str__(self):
-        return self._attrs[self.__class__._id_attr]
+        return self._attrs[self.__class__._id_attr][0]
+
+    def __repr__(self):
+        return "DN: %s\nattrs: %s" % (self._dn, repr(self._attrs))
 
 class User(DirectoryObject):
     _id_attr = cfg.user.attr.uid
 
 class Directory():
-    def __init__(self):
-        self.active_users = UserMapping(cfg.user.base.active)
-        self.suspended_users = UserMapping(cfg.user.base.suspended)
+    def active_users(self, attrs = None):
+        return UserMapping(cfg.user.base.active, attrs)
+
+    def suspended_users(self, attrs = None):
+        return UserMapping(cfg.user.base.suspended, attrs)
