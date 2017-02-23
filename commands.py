@@ -19,34 +19,6 @@ def scope(scope_str):
         msg = "Scope must be %s, not '%s'" % ("|".join(scopes), scope_str)
         raise ValueError(msg) from key
 
-def pretty_print(entry):
-    def output(k, v):
-        try:
-            s = v.decode("utf-8")
-        except AttributeError:
-            s = str(v)
-
-        print(formatter.format(k, s))
-
-    attrs = entry["attributes"]
-    width = len( functools.reduce(longest_str, attrs) ) + 1
-    formatter = "{:%is} {:s}" % width
-
-    for key in sorted(attrs):
-        values = attrs[key]
-        if type(values) is list:
-            first_value = values.pop(0)
-            output(key + ":", first_value)
-            for value in values:
-                output("", value)
-
-        else:
-            output(key + ":", values)
-
-    print()
-
-longest_str = lambda x, y: x if len(x) > len(y) else y
-
 class NotFound(Exception):
     def log(self):
         logging.error( str(self) )
