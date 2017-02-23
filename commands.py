@@ -1,32 +1,16 @@
 import logging
 import sys
-import functools
 import random
 
 import ldap3
 
-import settings
+from directory.config import cfg
+from directory.directory import Directory, DirectoryMapping
 
 class Command:
     def __init__(self, args):
         self._args = args
-
-        self._cfg = settings.Config()
-        ldap = self._cfg.ldap
-
-        try:
-            binddn = ldap.binddn
-            bindpw = ldap.bindpw
-        except AttributeError:
-            binddn = None
-            bindpw = None
-
-        self._ldap = ldap3.Connection(
-                server = ldap.uri,
-                user = binddn,
-                password = bindpw,
-                raise_exceptions = True)
-        self._ldap.bind()
+        self._dir = Directory()
 
     def _args_or_stdin(self, argname):
         args = getattr(self._args, argname)
@@ -38,7 +22,6 @@ class Command:
         else:
             with sys.__stdin__ as stdin:
                 for line in stdin:
-                    yield line[:-1]
 
     def _input_entry(self, objectclass, templates):
         if self._args.template:
@@ -54,10 +37,11 @@ class Command:
                 default = attrs
                 prompt = "%s [%s]: " % (attr_def.key
                 val = input(prompt)
+                    yield line[:-1] # in text mode linesep is always "\n"
 
 class UserCommand(Command):
     def _get_unique_id_number(self):
-        user = self._cfg.user
+        user = cfg.user
         umin = user.nuid.min
         umax = user.nuid.max
         attr = user.attr.nuid
@@ -109,41 +93,45 @@ class UserCommand(Command):
         return True
 
     def list_users(self):
-        self._search_users("(%s=*)" % self._cfg.user.attr.uid)
+        user_entries = self._dir.active_users()
+        for uid in user_entries:
+            print(uid)
 
     def search(self):
-        self._search_users(self._args.filter)
+        matches = self._dir.active_users().search(self._args.filter)
+        for uid in matches:
+            print(uid)
 
-    def show(self):
-        for username in self._args_or_stdin("username"):
-            try:
-                entry = self._get_single_entry(username, attrs = ldap3.ALL_ATTRIBUTES)
-                pretty_print(entry)
-            except NotFound as err:
-                err.log()
-
-    def suspend(self):
-        for username in self._args_or_stdin("username"):
-            dn = self._get_single_entry(username)["dn"]
-            self._move_entry(dn, self._cfg.user.base.suspended)
-
-    def restore(self):
-        for username in self._args_or_stdin("username"):
-            dn = self._get_single_entry(username, active = False)["dn"]
-            self._move_entry(dn, self._cfg.user.base.active)
-
-    def delete(self):
-        for username in self._args_or_stdin("username"):
-            dn = self._get_single_entry(username, active = False)["dn"]
-            self._delete_entry(dn)
-
-    def add(self):
-        user = self._cfg.user
-        (dn, attrs) = self._input_entry(user.objectclass, user.templates)
-        self._add_entry(dn, user.objectclass, attrs)
-
-#    def rename(self):
-#    def list_keys(self):
-    def add_key(self):
-        pass
-#    def delete_key(self):
+#    def show(self):
+#        for username in self._args_or_stdin("username"):
+#            try:
+#                entry = self._get_single_entry(username, attrs = ldap3.ALL_ATTRIBUTES)
+#                pretty_print(entry)
+#            except NotFound as err:
+#                err.log()
+#
+#    def suspend(self):
+#        for username in self._args_or_stdin("username"):
+#            dn = self._get_single_entry(username)["dn"]
+#            self._move_entry(dn, cfg.user.base.suspended)
+#
+#    def restore(self):
+#        for username in self._args_or_stdin("username"):
+#            dn = self._get_single_entry(username, active = False)["dn"]
+#            self._move_entry(dn, cfg.user.base.active)
+#
+#    def delete(self):
+#        for username in self._args_or_stdin("username"):
+#            dn = self._get_single_entry(username, active = False)["dn"]
+#            self._delete_entry(dn)
+#
+#    def add(self):
+#        user = cfg.user
+#        (dn, attrs) = self._input_entry(user.objectclass, user.templates)
+#        self._add_entry(dn, user.objectclass, attrs)
+#
+##    def rename(self):
+##    def list_keys(self):
+#    def add_key(self):
+#        pass
+##    def delete_key(self):
