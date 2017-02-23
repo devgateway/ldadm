@@ -1,3 +1,4 @@
+import copy
 try:
     from collections.abc import MutableMapping
 except(ImportError):
@@ -92,11 +93,33 @@ class DirectoryMapping(MutableMapping):
     def __len__(self):
         raise NotImplementedError
 
-class DirectoryObject:
-    def __init__(self, id):
-        self._id = id
-        self._dn = None
-        self._attrs = {}
+class UserMapping(DirectoryMapping):
+    _id_attr = cfg.user.attr.uid
+    _scope = scope(cfg.user.scope)
+
+class DirectoryObject():
+    def __init__(self, ref = None):
+        if ref is None:
+            self._dn = None
+            self._attrs = {}
+        elif type(ref) is dict:
+            self._dn = ref["dn"]
+            self._attrs = ref["attributes"]
+        elif isinstance(ref, self.__class__):
+            self._dn = None
+            self._attrs = copy.deepcopy(peer._attrs)
+            del self._attrs[self.__class__._id_attr]
+        else:
+            print(repr(ref))
+            raise TypeError
 
     def __str__(self):
-        return self._id
+        return self._attrs[self.__class__._id_attr]
+
+class User(DirectoryObject):
+    _id_attr = cfg.user.attr.uid
+
+class Directory():
+    def __init__(self):
+        self.active_users = UserMapping(cfg.user.base.active)
+        self.suspended_users = UserMapping(cfg.user.base.suspended)
