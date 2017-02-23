@@ -35,7 +35,7 @@ class DirectoryMapping(MutableMapping):
                 search_base = self._base,
                 search_filter = filter,
                 search_scope = self.__class__._scope,
-                attributes = self._attrs)
+                attributes = self.__class__._id_attr)
 
     def __iter__(self):
         filter = "(%s=*)" % self.__class__._id_attr
@@ -107,7 +107,6 @@ class DirectoryObject():
             self._attrs = copy.deepcopy(peer._attrs)
             del self._attrs[self.__class__._id_attr]
         else:
-            print(repr(ref))
             raise TypeError
 
     def __str__(self):
