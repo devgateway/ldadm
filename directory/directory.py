@@ -85,7 +85,7 @@ class DirectoryMapping(MutableMapping):
         self._ldap.modify_dn(dn = dn, relative_dn = new_rdn)
 
     def __len__(self):
-        raise NotImplemented
+        raise NotImplementedError
 
 class DirectoryObject:
     def __init__(self, id):
