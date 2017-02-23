@@ -31,16 +31,17 @@ class DirectoryMapping(MutableMapping):
         return self._getitem(id, attrs = None)["dn"]
 
     def search(self, filter):
-        return ldap.extend.standard.paged_search(
+        matches = ldap.extend.standard.paged_search(
                 search_base = self._base,
                 search_filter = filter,
                 search_scope = self.__class__._scope,
                 attributes = self.__class__._id_attr)
+        for entry in matches:
+            yield entry["attributes"][self.__class__._id_attr][0]
 
     def __iter__(self):
         filter = "(%s=*)" % self.__class__._id_attr
-        for entry in self.search(filter):
-            yield entry["attributes"][self.__class__._id_attr][0]
+        return self.search(filter)
 
     def __contains__(self, id):
         try:
