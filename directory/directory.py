@@ -1,7 +1,7 @@
 import copy
 try:
     from collections.abc import MutableMapping
-except(ImportError):
+except ImportError:
     from collections import MutableMapping
 
 import ldap3
