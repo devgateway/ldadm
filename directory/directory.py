@@ -25,7 +25,7 @@ class DirectoryMapping(MutableMapping):
         if ldap.response:
             return ldap.response[0]
         else:
-            raise IndexError(id)
+            raise IndexError("Object '%s' not found in the directory" % id)
 
     def _get_dn(self, id):
         return self._getitem(id, attrs = None)["dn"]

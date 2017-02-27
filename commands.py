@@ -128,16 +128,20 @@ class UserCommand(Command):
             except IndexError:
                 log.error("User %s not found" % uid)
 
-#    def suspend(self):
-#        for username in self._args_or_stdin("username"):
-#            dn = self._get_single_entry(username)["dn"]
-#            self._move_entry(dn, cfg.user.base.suspended)
-#
-#    def restore(self):
-#        for username in self._args_or_stdin("username"):
-#            dn = self._get_single_entry(username, active = False)["dn"]
-#            self._move_entry(dn, cfg.user.base.active)
-#
+    def suspend(self):
+        active = self._dir.active_users()
+        suspended = self._dir.suspended_users()
+
+        for uid in self._args_or_stdin("username"):
+            active.move(uid, suspended)
+
+    def restore(self):
+        active = self._dir.active_users()
+        suspended = self._dir.suspended_users()
+
+        for uid in self._args_or_stdin("username"):
+            suspended.move(uid, active)
+
 #    def delete(self):
 #        for username in self._args_or_stdin("username"):
 #            dn = self._get_single_entry(username, active = False)["dn"]
