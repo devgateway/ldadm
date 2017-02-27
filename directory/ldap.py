@@ -1,6 +1,10 @@
+import logging
+
 import ldap3
 
 from .config import cfg
+
+log = logging.getLogger()
 
 def scope(scope_str):
     scopes = {
@@ -21,6 +25,9 @@ def _get_ldap():
     except AttributeError:
         binddn = None
         bindpw = None
+
+    if log.isEnabledFor(logging.DEBUG):
+        ldap3.utils.log.set_library_log_detail_level(ldap3.utils.log.PROTOCOL)
 
     conn = ldap3.Connection(
             server = cfg.ldap.uri,

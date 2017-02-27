@@ -93,12 +93,21 @@ class UserCommand(Command):
         return True
 
     def list_users(self):
-        user_entries = self._dir.active_users()
+        if self._args.suspended:
+            user_entries = self._dir.suspended_users()
+        else:
+            user_entries = self._dir.active_users()
+
         for uid in user_entries:
             print(uid)
 
     def search(self):
-        matches = self._dir.active_users().search(self._args.filter)
+        if self._args.suspended:
+            user_entries = self._dir.suspended_users()
+        else:
+            user_entries = self._dir.active_users()
+
+        matches = user_entries.search(self._args.filter)
         for uid in matches:
             print(uid)
 
