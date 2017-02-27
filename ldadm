@@ -56,11 +56,14 @@ multi_user_parser.add_argument("username",
         nargs = "*",
         help = "One or more UIDs. If omitted, read from stdin.")
 
-p = user.add_parser("show",
+show = user.add_parser("show",
         aliases = ["info"],
         parents = [multi_user_parser],
         help = "Show details for accounts")
-p.set_defaults(method_name = "show")
+show.set_defaults(method_name = "show")
+show.add_argument("--full",
+        action = "store_true",
+        help = "Also show operational attributes")
 
 p = user.add_parser("suspend",
         aliases = ["lock", "ban", "disable"],

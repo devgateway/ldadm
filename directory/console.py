@@ -1,4 +1,5 @@
 from functools import reduce
+from datetime import datetime
 
 def pretty_print(entry):
     def output(k, v):
@@ -16,11 +17,15 @@ def pretty_print(entry):
 
     for key in sorted(attrs):
         values = attrs[key]
+
         if type(values) is list:
             first_value = values.pop(0)
             output(key + ":", first_value)
             for value in values:
                 output("", value)
+
+        elif type(values) is datetime:
+            output(key + ":", values.strftime("%c"))
 
         else:
             output(key + ":", values)

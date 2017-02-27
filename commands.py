@@ -115,7 +115,11 @@ class UserCommand(Command):
             print(uid)
 
     def show(self):
-        attrs = ldap3.ALL_ATTRIBUTES
+        if self._args.full:
+            attrs = [ldap3.ALL_ATTRIBUTES, ldap3.ALL_OPERATIONAL_ATTRIBUTES]
+        else:
+            attrs = ldap3.ALL_ATTRIBUTES
+
         user_entries = self._dir.active_users(attrs)
 
         for uid in self._args_or_stdin("username"):
