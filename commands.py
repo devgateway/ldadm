@@ -152,12 +152,20 @@ class UserCommand(Command):
             msg = "User '%s' is not among suspended users" % uid
             raise RuntimeError(msg) from ie
 
+    def rename(self):
+        try:
+            self._dir.active_users().rename(
+                    old_id = self._args.oldname,
+                    new_id = self._args.newname)
+        except ldap3.core.exceptions.LDAPEntryAlreadyExistsResult as err:
+            msg = "User '%s' already exists" % self._args.newname
+            raise RuntimeError(msg) from err
+
 #    def add(self):
 #        user = cfg.user
 #        (dn, attrs) = self._input_entry(user.objectclass, user.templates)
 #        self._add_entry(dn, user.objectclass, attrs)
 #
-##    def rename(self):
 ##    def list_keys(self):
 #    def add_key(self):
 #        pass

@@ -72,8 +72,8 @@ class DirectoryMapping(MutableMapping):
                 relative_dn = rdn,
                 new_superior = dest._base)
 
-    def rename(self, id, new_id):
-        dn = self._get_dn(id)
+    def rename(self, old_id, new_id):
+        dn = self._get_dn(old_id)
 
         # RDN can be an array: gn=John+sn=Doe
         rdns = ldap3.utils.dn.safe_rdn(dn, decompose = True)
@@ -81,12 +81,14 @@ class DirectoryMapping(MutableMapping):
         for rdn in rdns:
             if rdn[0] == self.__class__._id_attr:
                 # primary ID element
-                new_rdns.append( (rdn[0], new_val) )
+                new_rdns.append( (rdn[0], new_id) )
             else:
                 new_rdns.append(rdn)
-        new_rdn = "+".join(new_rdns)
+        new_rdn = "+".join(
+                map(lambda rdn: "%s=%s" % rdn, new_rdns)
+                )
 
-        self._ldap.modify_dn(dn = dn, relative_dn = new_rdn)
+        ldap.modify_dn(dn = dn, relative_dn = new_rdn)
 
     def __len__(self):
         raise NotImplementedError
