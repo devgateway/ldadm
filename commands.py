@@ -142,11 +142,16 @@ class UserCommand(Command):
         for uid in self._args_or_stdin("username"):
             suspended.move(uid, active)
 
-#    def delete(self):
-#        for username in self._args_or_stdin("username"):
-#            dn = self._get_single_entry(username, active = False)["dn"]
-#            self._delete_entry(dn)
-#
+    def delete(self):
+        suspended = self._dir.suspended_users()
+
+        try:
+            for uid in self._args_or_stdin("username"):
+                del suspended[uid]
+        except IndexError as ie:
+            msg = "User '%s' is not among suspended users" % uid
+            raise RuntimeError(msg) from ie
+
 #    def add(self):
 #        user = cfg.user
 #        (dn, attrs) = self._input_entry(user.objectclass, user.templates)
