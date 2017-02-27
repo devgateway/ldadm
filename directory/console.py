@@ -1,3 +1,5 @@
+from functools import reduce
+
 def pretty_print(entry):
     def output(k, v):
         try:
@@ -8,7 +10,7 @@ def pretty_print(entry):
         print(formatter.format(k, s))
 
     attrs = entry["attributes"]
-    longest = functools.reduce(lambda x, y: x if len(x) > len(y) else y, attrs)
+    longest = reduce(lambda x, y: x if len(x) > len(y) else y, attrs)
     width = len(longest) + 1
     formatter = "{:%is} {:s}" % width
 

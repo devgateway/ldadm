@@ -6,6 +6,9 @@ import ldap3
 
 from directory.config import cfg
 from directory.directory import Directory, DirectoryMapping
+from directory.console import pretty_print
+
+log = logging.getLogger(__name__)
 
 class Command:
     def __init__(self, args):
@@ -16,7 +19,7 @@ class Command:
         args = getattr(self._args, argname)
         if args:
             if not sys.__stdin__.isatty():
-                logging.warning("Standard input ignored, because arguments are present")
+                log.warning("Standard input ignored, because arguments are present")
             for arg in args:
                 yield arg
         else:
@@ -60,7 +63,7 @@ class UserCommand(Command):
             conditions = map(lambda n: "(%s=%i)" % (attr, n), nuids)
             filt = "(|%s)" % "".join(conditions)
 
-            logging.debug("Searching for UID collisions in '%s'" % base)
+            log.debug("Searching for UID collisions in '%s'" % base)
             entries = self._ldap.extend.standard.paged_search(
                     search_base = base,
                     search_filter = filt,
@@ -69,7 +72,7 @@ class UserCommand(Command):
             for entry in entries:
                 collision = entry["attributes"][attr]
                 nuids.remove(collision)
-                logging.debug("UID collision %i skipped" % collision)
+                log.debug("UID collision %i skipped" % collision)
 
         # find existing UIDs, and remove them from the list of candidates
         remove_collisions(user.base.active)
@@ -111,14 +114,16 @@ class UserCommand(Command):
         for uid in matches:
             print(uid)
 
-#    def show(self):
-#        for username in self._args_or_stdin("username"):
-#            try:
-#                entry = self._get_single_entry(username, attrs = ldap3.ALL_ATTRIBUTES)
-#                pretty_print(entry)
-#            except NotFound as err:
-#                err.log()
-#
+    def show(self):
+        attrs = ldap3.ALL_ATTRIBUTES
+        user_entries = self._dir.active_users(attrs)
+
+        for uid in self._args_or_stdin("username"):
+            try:
+                pretty_print(user_entries[uid])
+            except IndexError:
+                log.error("User %s not found" % uid)
+
 #    def suspend(self):
 #        for username in self._args_or_stdin("username"):
 #            dn = self._get_single_entry(username)["dn"]
