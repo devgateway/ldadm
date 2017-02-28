@@ -27,21 +27,6 @@ class Command:
                 for line in stdin:
                     yield line[:-1] # in text mode linesep is always "\n"
 
-    def _input_entry(self, objectclass, templates):
-        if self._args.template:
-            entry = self._get_single_entry(self._args.template, attrs = ldap3.ALL_ATTRIBUTES)
-            attrs = entry["attributes"]
-        else:
-            attrs = []
-
-        templatized = []
-        user_def = ldap3.ObjectDef(objectclass, self._ldap)
-        for attr_def in user_def:
-            if attr_def.mandatory:
-                default = attrs
-                prompt = "%s [%s]: " % (attr_def.key
-                val = input(prompt)
-
 class UserCommand(Command):
     def _get_unique_id_number(self):
         user = cfg.user
