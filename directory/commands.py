@@ -48,6 +48,20 @@ class Command:
                 for line in stdin:
                     yield line[:-1] # in text mode linesep is always "\n"
 
+    @staticmethod
+    def _get_new_rdn(entry, attr_name, new_val):
+        # RDN can be an array: gn=John+sn=Doe
+        old_rdn = ldap3.utils.dn.safe_rdn(entry.entry_dn, decompose = True)
+        new_rdn = []
+        for key_val in old_rdn:
+            if key_val[0] == attr_name:
+                # primary ID element
+                new_rdn.append( (key_val[0], new_val) )
+            else:
+                new_rdn.append(key_val)
+
+        return "+".join( map(lambda key_val: "%s=%s" % key_val, new_rdn) )
+
 class UserCommand(Command):
     def __init__(self, args):
         super().__init__(args)
@@ -218,10 +232,17 @@ class UserCommand(Command):
         return Writer.from_cursor(reader)
 
     def rename(self):
+        base = self._cfg.user.base.active
+        query = "%s: %s" % (self._cfg.user.attr.uid, self._args.oldname)
+
+        user = self._get_writer(base, query).entries[0]
         try:
-            self._dir.active_users().rename(
-                    old_id = self._args.oldname,
-                    new_id = self._args.newname)
+            rdn = self._get_new_rdn(
+                    entry = user,
+                    attr_name = self._cfg.user.attr.uid,
+                    new_val = self._args.newname)
+            user.entry_rename(rdn)
+            user.entry_commit_changes(refresh = False)
         except ldap3.core.exceptions.LDAPEntryAlreadyExistsResult as err:
             msg = "User '%s' already exists" % self._args.newname
             raise RuntimeError(msg) from err
