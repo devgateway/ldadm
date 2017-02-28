@@ -107,24 +107,32 @@ class UserCommand(Command):
 
         return True
 
-    def list_users(self):
+    def _search(self, query = None):
         if self._args.suspended:
-            user_entries = self._dir.suspended_users()
+            base = self._cfg.user.base.suspended
         else:
-            user_entries = self._dir.active_users()
+            base = self._cfg.user.base.active
 
-        for uid in user_entries:
-            print(uid)
+        if self._cfg.user.scope.lower() == "one":
+            sub_tree = False
+        else:
+            sub_tree = True
+
+        reader = Reader(
+                connection = self._conn,
+                base = base,
+                query = query,
+                object_def = self.__user,
+                sub_tree = sub_tree)
+        users = reader.search_paged(paged_size = 100, attributes = self._cfg.user.attr.uid)
+        for user in users:
+            print(user[self._cfg.user.attr.uid])
+
+    def list_users(self):
+        self._search()
 
     def search(self):
-        if self._args.suspended:
-            user_entries = self._dir.suspended_users()
-        else:
-            user_entries = self._dir.active_users()
-
-        matches = user_entries.search(self._args.filter)
-        for uid in matches:
-            print(uid)
+        self._search(self._args.filter)
 
     def show(self):
         if self._args.full:
