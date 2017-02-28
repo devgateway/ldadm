@@ -4,9 +4,9 @@ import random
 
 import ldap3
 
-from directory.config import cfg
-from directory.directory import Directory, DirectoryMapping
-from directory.console import pretty_print
+from .config import cfg
+from .directory import Directory, DirectoryMapping
+from .console import pretty_print
 
 log = logging.getLogger(__name__)
 
