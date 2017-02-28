@@ -108,9 +108,13 @@ class UserCommand(Command):
         return True
 
     @staticmethod
-    def __assert_empty(usernames):
+    def __assert_empty(usernames, critical = True):
         if usernames:
-            log.error("Users not found: " + ", ".join(usernames))
+            msg = "Users not found: " + ", ".join(usernames)
+            if critical:
+                raise RuntimeError(msg)
+            else:
+                log.error(msg)
 
     def _set_active(self, usernames, active = True):
         if active:
@@ -120,23 +124,9 @@ class UserCommand(Command):
             base_from = self._cfg.user.base.active
             base_to = self._cfg.user.base.suspended
 
-        if self._cfg.user.scope.lower() == "one":
-            sub_tree = False
-        else:
-            sub_tree = True
-
         query = "%s: %s" % ( self._cfg.user.attr.uid, ";".join(usernames) )
-        attrs = self._cfg.user.attr.uid
 
-        reader = Reader(
-                connection = self._conn,
-                base = base_from,
-                query = query,
-                object_def = self.__user,
-                sub_tree = sub_tree)
-
-        reader.search()
-        users = Writer.from_cursor(reader)
+        users = self._get_writer(base_from, query)
 
         for user in users:
             uid = user[self._cfg.user.attr.uid].value
@@ -153,17 +143,7 @@ class UserCommand(Command):
         else:
             base = self._cfg.user.base.suspended
 
-        if self._cfg.user.scope.lower() == "one":
-            sub_tree = False
-        else:
-            sub_tree = True
-
-        reader = Reader(
-                connection = self._conn,
-                base = base,
-                query = query,
-                object_def = self.__user,
-                sub_tree = sub_tree)
+        reader = self._get_reader(base, query)
         return reader.search_paged(
                 paged_size = self._cfg.ldap.paged_search_size,
                 attributes = attrs)
@@ -204,14 +184,38 @@ class UserCommand(Command):
         self._set_active(usernames, active = True)
 
     def delete(self):
-        suspended = self._dir.suspended_users()
+        usernames = list(self._args_or_stdin("username"))
+        query = "%s: %s" % ( self._cfg.user.attr.uid, ";".join(usernames) )
 
-        try:
-            for uid in self._args_or_stdin("username"):
-                del suspended[uid]
-        except IndexError as ie:
-            msg = "User '%s' is not among suspended users" % uid
-            raise RuntimeError(msg) from ie
+        users = self._get_writer(self._cfg.user.base.suspended, query)
+
+        for user in users:
+            uid = user[self._cfg.user.attr.uid].value
+            user.entry_delete()
+            usernames.remove(uid)
+
+        users.commit()
+
+        self.__assert_empty(usernames)
+
+    def _get_reader(self, base, query):
+        if self._cfg.user.scope.lower() == "one":
+            sub_tree = False
+        else:
+            sub_tree = True
+
+        return Reader(
+                connection = self._conn,
+                base = base,
+                query = query,
+                object_def = self.__user,
+                sub_tree = sub_tree)
+
+    def _get_writer(self, base, query):
+        attrs = self._cfg.user.attr.uid
+        reader = self._get_reader(base, query)
+        reader.search(attrs)
+        return Writer.from_cursor(reader)
 
     def rename(self):
         try:
