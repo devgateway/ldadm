@@ -107,11 +107,51 @@ class UserCommand(Command):
 
         return True
 
-    def _search(self, attrs, query = None):
-        if self._args.suspended:
-            base = self._cfg.user.base.suspended
+    @staticmethod
+    def __assert_empty(usernames):
+        if usernames:
+            log.error("Users not found: " + ", ".join(usernames))
+
+    def _set_active(self, usernames, active = True):
+        if active:
+            base_from = self._cfg.user.base.suspended
+            base_to = self._cfg.user.base.active
         else:
+            base_from = self._cfg.user.base.active
+            base_to = self._cfg.user.base.suspended
+
+        if self._cfg.user.scope.lower() == "one":
+            sub_tree = False
+        else:
+            sub_tree = True
+
+        query = "%s: %s" % ( self._cfg.user.attr.uid, ";".join(usernames) )
+        attrs = self._cfg.user.attr.uid
+
+        reader = Reader(
+                connection = self._conn,
+                base = base_from,
+                query = query,
+                object_def = self.__user,
+                sub_tree = sub_tree)
+
+        reader.search()
+        users = Writer.from_cursor(reader)
+
+        for user in users:
+            uid = user[self._cfg.user.attr.uid].value
+            user.entry_move(base_to)
+            usernames.remove(uid)
+
+        users.commit()
+
+        self.__assert_empty(usernames)
+
+    def _search(self, attrs = None, query = None, active = True):
+        if active:
             base = self._cfg.user.base.active
+        else:
+            base = self._cfg.user.base.suspended
 
         if self._cfg.user.scope.lower() == "one":
             sub_tree = False
@@ -130,13 +170,13 @@ class UserCommand(Command):
 
     def list_users(self):
         attrs = self._cfg.user.attr.uid
-        for user in self._search(attrs):
+        for user in self._search(attrs, active = not self._args.suspended):
             print(user[self._cfg.user.attr.uid])
 
     def search(self):
         query = self._args.filter
         attrs = self._cfg.user.attr.uid
-        for user in self._search(attrs, query):
+        for user in self._search(attrs, query, active = not self._args.suspended):
             print(user[self._cfg.user.attr.uid])
 
     def show(self):
@@ -148,27 +188,20 @@ class UserCommand(Command):
         usernames = list(self._args_or_stdin("username"))
         query = "%s: %s" % ( self._cfg.user.attr.uid, ";".join(usernames) )
 
-        for user in self._search(attrs, query):
+        for user in self._search(attrs, query, active = not self._args.suspended):
             pretty_print(user)
             uid = user[self._cfg.user.attr.uid].value
             usernames.remove(uid)
 
-        if usernames:
-            log.error("Users not found: " + ", ".join(usernames))
+        self.__assert_empty(usernames)
 
     def suspend(self):
-        active = self._dir.active_users()
-        suspended = self._dir.suspended_users()
-
-        for uid in self._args_or_stdin("username"):
-            active.move(uid, suspended)
+        usernames = list(self._args_or_stdin("username"))
+        self._set_active(usernames, active = False)
 
     def restore(self):
-        active = self._dir.active_users()
-        suspended = self._dir.suspended_users()
-
-        for uid in self._args_or_stdin("username"):
-            suspended.move(uid, active)
+        usernames = list(self._args_or_stdin("username"))
+        self._set_active(usernames, active = True)
 
     def delete(self):
         suspended = self._dir.suspended_users()
