@@ -58,7 +58,7 @@ multi_user_parser.add_argument("username",
 
 show = user.add_parser("show",
         aliases = ["info"],
-        parents = [multi_user_parser],
+        parents = [multi_user_parser, only_suspended],
         help = "Show details for accounts")
 show.set_defaults(method_name = "show")
 show.add_argument("--full",

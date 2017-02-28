@@ -10,24 +10,24 @@ def pretty_print(entry):
 
         print(formatter.format(k, s))
 
-    attrs = entry["attributes"]
+    attrs = entry.entry_attributes
     longest = reduce(lambda x, y: x if len(x) > len(y) else y, attrs)
     width = len(longest) + 1
     formatter = "{:%is} {:s}" % width
 
     for key in sorted(attrs):
-        values = attrs[key]
+        value = entry[key].value
 
-        if type(values) is list:
-            first_value = values.pop(0)
+        if type(value) is list:
+            first_value = value.pop(0)
             output(key + ":", first_value)
-            for value in values:
-                output("", value)
+            for elem in value:
+                output("", elem)
 
-        elif type(values) is datetime:
-            output(key + ":", values.strftime("%c"))
+        elif type(value) is datetime:
+            output(key + ":", value.strftime("%c"))
 
         else:
-            output(key + ":", values)
+            output(key + ":", value)
 
     print()

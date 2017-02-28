@@ -107,7 +107,7 @@ class UserCommand(Command):
 
         return True
 
-    def _search(self, query = None):
+    def _search(self, attrs, query = None):
         if self._args.suspended:
             base = self._cfg.user.base.suspended
         else:
@@ -124,15 +124,20 @@ class UserCommand(Command):
                 query = query,
                 object_def = self.__user,
                 sub_tree = sub_tree)
-        users = reader.search_paged(paged_size = 100, attributes = self._cfg.user.attr.uid)
-        for user in users:
-            print(user[self._cfg.user.attr.uid])
+        return reader.search_paged(
+                paged_size = self._cfg.ldap.paged_search_size,
+                attributes = attrs)
 
     def list_users(self):
-        self._search()
+        attrs = self._cfg.user.attr.uid
+        for user in self._search(attrs):
+            print(user[self._cfg.user.attr.uid])
 
     def search(self):
-        self._search(self._args.filter)
+        query = self._args.filter
+        attrs = self._cfg.user.attr.uid
+        for user in self._search(attrs, query):
+            print(user[self._cfg.user.attr.uid])
 
     def show(self):
         if self._args.full:
@@ -140,13 +145,16 @@ class UserCommand(Command):
         else:
             attrs = ldap3.ALL_ATTRIBUTES
 
-        user_entries = self._dir.active_users(attrs)
+        usernames = list(self._args_or_stdin("username"))
+        query = "%s: %s" % ( self._cfg.user.attr.uid, ";".join(usernames) )
 
-        for uid in self._args_or_stdin("username"):
-            try:
-                pretty_print(user_entries[uid])
-            except IndexError:
-                log.error("User %s not found" % uid)
+        for user in self._search(attrs, query):
+            pretty_print(user)
+            uid = user[self._cfg.user.attr.uid].value
+            usernames.remove(uid)
+
+        if usernames:
+            log.error("Users not found: " + ", ".join(usernames))
 
     def suspend(self):
         active = self._dir.active_users()
