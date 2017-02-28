@@ -10,18 +10,6 @@ from .console import pretty_print
 
 log = logging.getLogger(__name__)
 
-#def _args_or_stdin(self, argname):
-#    args = getattr(self._args, argname)
-#    if args:
-#        if not sys.__stdin__.isatty():
-#            log.warning("Standard input ignored, because arguments are present")
-#        for arg in args:
-#            yield arg
-#    else:
-#        with sys.__stdin__ as stdin:
-#            for line in stdin:
-#                yield line[:-1] # in text mode linesep is always "\n"
-
 class Command:
     def __init__(self, args):
         self._args = args
@@ -47,6 +35,18 @@ class Command:
         conn.bind()
 
         return conn
+
+    def _args_or_stdin(self, argname):
+        args = getattr(self._args, argname)
+        if args:
+            if not sys.__stdin__.isatty():
+                log.warning("Standard input ignored, because arguments are present")
+            for arg in args:
+                yield arg
+        else:
+            with sys.__stdin__ as stdin:
+                for line in stdin:
+                    yield line[:-1] # in text mode linesep is always "\n"
 
 class UserCommand(Command):
     def __init__(self, args):
