@@ -155,7 +155,7 @@ logging.basicConfig(level = log_level)
 logging.debug("Invoking %s.%s" % (args.class_name, args.method_name))
 
 try:
-    commands = importlib.import_module("commands")
+    commands = importlib.import_module("directory.commands")
     command_instance = getattr(commands, args.class_name)(args)
     handler = getattr(command_instance, args.method_name)
     handler()

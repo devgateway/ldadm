@@ -25,6 +25,7 @@ class Command:
         else:
             with sys.__stdin__ as stdin:
                 for line in stdin:
+                    yield line[:-1] # in text mode linesep is always "\n"
 
     def _input_entry(self, objectclass, templates):
         if self._args.template:
@@ -40,7 +41,6 @@ class Command:
                 default = attrs
                 prompt = "%s [%s]: " % (attr_def.key
                 val = input(prompt)
-                    yield line[:-1] # in text mode linesep is always "\n"
 
 class UserCommand(Command):
     def _get_unique_id_number(self):
