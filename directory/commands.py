@@ -10,24 +10,51 @@ from .console import pretty_print
 
 log = logging.getLogger(__name__)
 
+#def _args_or_stdin(self, argname):
+#    args = getattr(self._args, argname)
+#    if args:
+#        if not sys.__stdin__.isatty():
+#            log.warning("Standard input ignored, because arguments are present")
+#        for arg in args:
+#            yield arg
+#    else:
+#        with sys.__stdin__ as stdin:
+#            for line in stdin:
+#                yield line[:-1] # in text mode linesep is always "\n"
+
 class Command:
     def __init__(self, args):
         self._args = args
-        self._dir = Directory()
+        self._cfg = Config()
+        self._conn = self._connect()
 
-    def _args_or_stdin(self, argname):
-        args = getattr(self._args, argname)
-        if args:
-            if not sys.__stdin__.isatty():
-                log.warning("Standard input ignored, because arguments are present")
-            for arg in args:
-                yield arg
-        else:
-            with sys.__stdin__ as stdin:
-                for line in stdin:
-                    yield line[:-1] # in text mode linesep is always "\n"
+    def _connect(self):
+        try:
+            binddn = self._cfg.ldap.binddn
+            bindpw = self._cfg.ldap.bindpw
+        except AttributeError:
+            binddn = None
+            bindpw = None
+
+        if log.isEnabledFor(logging.DEBUG):
+            ldap3.utils.log.set_library_log_detail_level(ldap3.utils.log.PROTOCOL)
+
+        conn = ldap3.Connection(
+                server = self._cfg.ldap.uri,
+                user = binddn,
+                password = bindpw,
+                raise_exceptions = True)
+        conn.bind()
+
+        return conn
 
 class UserCommand(Command):
+    def __init__(self, args):
+        super().__init__(args)
+        self.__user = ObjectDef(
+                object_class = self._cfg.user.objectclass,
+                schema = self._conn)
+
     def _get_unique_id_number(self):
         user = cfg.user
         umin = user.nuid.min
