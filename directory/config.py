@@ -68,5 +68,3 @@ class Config:
 
     def __str__(self):
         return self._attr_name()
-
-cfg = Config()

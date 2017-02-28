@@ -3,9 +3,9 @@ import sys
 import random
 
 import ldap3
+from ldap3 import Connection, ObjectDef, Reader, Writer
 
-from .config import cfg
-from .directory import Directory
+from .config import Config
 from .console import pretty_print
 
 log = logging.getLogger(__name__)
