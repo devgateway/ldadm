@@ -5,7 +5,7 @@ import random
 import ldap3
 
 from .config import cfg
-from .directory import Directory, DirectoryMapping
+from .directory import Directory
 from .console import pretty_print
 
 log = logging.getLogger(__name__)
