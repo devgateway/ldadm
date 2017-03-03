@@ -151,13 +151,14 @@ class UserCommand(Command):
 
         self.__assert_empty(usernames)
 
-    def _search(self, attrs = None, query = None, active = True):
+    def _search(self, attrs = None, query = None, active = True, operational = False):
         if active:
             base = self._cfg.user.base.active
         else:
             base = self._cfg.user.base.suspended
 
         reader = self._get_reader(base, query)
+        reader.get_operational_attributes = operational
         return reader.search_paged(
                 paged_size = self._cfg.ldap.paged_search_size,
                 attributes = attrs)
@@ -174,15 +175,15 @@ class UserCommand(Command):
             print(user[self._cfg.user.attr.uid])
 
     def show(self):
-        if self._args.full:
-            attrs = [ldap3.ALL_ATTRIBUTES, ldap3.ALL_OPERATIONAL_ATTRIBUTES]
-        else:
-            attrs = ldap3.ALL_ATTRIBUTES
-
         usernames = list(self._args_or_stdin("username"))
         query = "%s: %s" % ( self._cfg.user.attr.uid, ";".join(usernames) )
 
-        for user in self._search(attrs, query, active = not self._args.suspended):
+        users = self._search(
+                attrs = ldap3.ALL_ATTRIBUTES,
+                query = query,
+                active = not self._args.suspended,
+                operational = self._args.full)
+        for user in users:
             pretty_print(user)
             uid = user[self._cfg.user.attr.uid].value
             usernames.remove(uid)
