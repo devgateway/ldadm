@@ -31,3 +31,7 @@ def pretty_print(entry):
             output(key + ":", value)
 
     print()
+
+def input_attributes(object_def, template):
+    attrs = {}
+    print("'Enter' = default value, '.' = delete value")

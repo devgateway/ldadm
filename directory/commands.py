@@ -6,7 +6,7 @@ import ldap3
 from ldap3 import Connection, ObjectDef, Reader, Writer
 
 from .config import Config
-from .console import pretty_print
+from .console import pretty_print, input_attributes
 
 log = logging.getLogger(__name__)
 
@@ -248,11 +248,21 @@ class UserCommand(Command):
             msg = "User '%s' already exists" % self._args.newname
             raise RuntimeError(msg) from err
 
-#    def add(self):
-#        user = cfg.user
-#        (dn, attrs) = self._input_entry(user.objectclass, user.templates)
-#        self._add_entry(dn, user.objectclass, attrs)
-#
+    def add(self):
+        base = self._cfg.user.base.active
+
+        if self._args.template:
+            query = "%s: %s" % (self._cfg.user.attr.uid, self._args.template)
+            reader = self._get_reader(base, query)
+            reader.search(ldap3.ALL_ATTRIBUTES)
+            template = reader.entries[0]
+        else:
+            reader = self._get_reader(base, query = None)
+            template = None
+
+        #attrs = input_attributes(
+        writer = Writer.from_cursor(reader)
+
 ##    def list_keys(self):
 #    def add_key(self):
 #        pass
