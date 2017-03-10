@@ -89,8 +89,8 @@ user_add = user.add_parser("add",
         aliases = ["create"],
         help = "Add a new account")
 user_add.set_defaults(method_name = "add")
-user_add.add_argument("-t", "--template",
-        dest = "template",
+user_add.add_argument("-d", "--defaults",
+        dest = "defaults",
         metavar = "USERNAME",
         nargs = 1,
         help = "Suggest defaults from an existing user")

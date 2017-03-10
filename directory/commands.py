@@ -1,9 +1,12 @@
 import logging
 import sys
 import random
+import re
 
 import ldap3
 from ldap3 import Connection, ObjectDef, Reader, Writer
+from ldap3.utils.dn import escape_attribute_value, safe_dn
+from ldap3.utils.ciDict import CaseInsensitiveWithAliasDict
 
 from .config import Config
 from .console import pretty_print, input_attributes
@@ -248,20 +251,131 @@ class UserCommand(Command):
             msg = "User '%s' already exists" % self._args.newname
             raise RuntimeError(msg) from err
 
+    def _normalized_attr_name(self, attr_name):
+        return self.__user[attr_name].key
+
     def add(self):
         base = self._cfg.user.base.active
+        uid_attr_name = self._cfg.user.attr.uid
 
-        if self._args.template:
-            query = "%s: %s" % (self._cfg.user.attr.uid, self._args.template)
+        # Templates in config can use aliased attribute names, e.g. givenName or gn.
+        # Make indexes of the dict unambigous
+        templates = {}
+        try:
+            raw_templates = self._cfg.user.attr.templates.__dict__["_cfg"]
+        except directory.config.ConfigAttrError:
+            pass
+        for raw_attr_name, value in raw_templates.items():
+            key = self._normalized_attr_name(raw_attr_name)
+            templates[key] = raw_templates[raw_attr_name]
+
+        # Get default values from a reference object
+        if self._args.defaults:
+            query = "%s: %s" % (uid_attr_name, self._args.defaults)
             reader = self._get_reader(base, query)
             reader.search(ldap3.ALL_ATTRIBUTES)
-            template = reader.entries[0]
+            source_obj = reader.entries[0]
         else:
-            reader = self._get_reader(base, query = None)
-            template = None
+            source_obj = None
 
-        #attrs = input_attributes(
-        writer = Writer.from_cursor(reader)
+        # Get list of all possible attributes and aliases
+        writer = Writer(
+                connection = self._conn,
+                object_def = self.__user)
+        # create a virtual entry, which never gets committed, just to store attributes
+        # we don't know the actual DN yet
+        fake_rdn = uid_attr_name + "=_new_"
+        new_attrs = writer.new([fake_rdn, base])
+
+        # Get all mandatory and required optional attributes into new_attrs
+        attr_handlers = {
+                self._cfg.user.attr.nuid: "_get_unique_id_number",
+                self._cfg.user.attr.uid: "_uid_unique",
+                self._cfg.user.attr.passw: "_create_password"
+                }
+        def resolve_attribute(attr_name):
+            attr_name = self._normalized_attr_name(attr_name)
+
+            if attr_name in new_attrs: # already resolved
+                return
+
+            if attr_name in templates:
+                # try to interpolate default value recursively
+                while True: # failure is not an option
+                    try:
+                        print("attr: %s" % attr_name)
+                        print(dir(new_attrs))
+                        if type(templates[attr_name]) is list:
+                            default = []
+                            for template in templates[attr_name]:
+                                default.append( template.format(**new_attrs) )
+                        elif type(templates[attr_name]) is str:
+                            default = templates[attr_name].format(**new_attrs)
+                        else:
+                            raise TypeError("Templates must be strings or lists")
+
+                        # TODO: modifiers?
+                        break
+                    except KeyError as err:
+                        # key missing yet, try to resolve recursively
+                        key = err.args[0]
+                        resolve_attribute(key)
+
+            elif source_obj:
+                # if a reference entry is given, take default value from there
+                try:
+                    default = source_obj[attr_name]
+                except ldap3.core.exceptions.LDAPKeyError:
+                    pass
+
+            else:
+                default = None
+
+            if attr_name in attr_handlers:
+                handler = getattr(self, attr_handlers[attr_name])
+                try:
+                    default = handler(default)
+                except:
+                    default = None
+
+            if default:
+                if type(default) is list:
+                    default_str = "; ".join(default)
+                else:
+                    default_str = str(default)
+
+                prompt = "%s [%s]: " % (attr_name, default_str)
+
+            else:
+                prompt = "%s: " % attr_name
+
+            response = input(prompt)
+
+            if response == ".":
+                pass
+            elif not new_value:
+                new_attrs[attr_name] = default
+            else:
+                matches = re.split(r'\s*;\s', response)
+                if matches:
+                    new_attrs[attr_name] = matches
+                else:
+                    new_attrs[attr_name] = response
+
+        # Resolve each attribute recursively
+        for attr_def in self.__user:
+            key = attr_def.key
+            if key in templates or attr_def.mandatory:
+                resolve_attribute(key)
+
+        # Create a new virtual object
+        uid = new_attrs[uid_attr_name]
+        rdn = "=".join( [uid_attr_name, escape_attribute_value(uid)] )
+        dn = safe_dn([rdn, base])
+        entry = writer.new(dn)
+
+        # Set object properties from ciDict
+        # Write the object to LDAP
 
 ##    def list_keys(self):
 #    def add_key(self):
