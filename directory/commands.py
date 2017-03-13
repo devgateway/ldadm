@@ -251,23 +251,32 @@ class UserCommand(Command):
             msg = "User '%s' already exists" % self._args.newname
             raise RuntimeError(msg) from err
 
-    def _normalized_attr_name(self, attr_name):
-        return self.__user[attr_name].key
+    def _read_templates(self):
+        templates = CaseInsensitiveWithAliasDict()
+
+        try:
+            raw_templates = self._cfg.user.attr.templates.__dict__["_cfg"]
+        except directory.config.ConfigAttrError:
+            pass
+
+        # read key, value from config; get aliases from schema
+        for raw_attr_name, value in raw_templates.items():
+            definition = self.__user[raw_attr_name]
+            key = [definition.key]
+            if definition.oid_info:
+                for name in definition.oid_info.name:
+                    if definition.key.lower() != name.lower():
+                        key.append(name)
+
+            templates[key] = value if type(value) is list else str(value)
+
+        return templates
 
     def add(self):
         base = self._cfg.user.base.active
         uid_attr_name = self._cfg.user.attr.uid
 
-        # Templates in config can use aliased attribute names, e.g. givenName or gn.
-        # Make indexes of the dict unambigous
-        templates = {}
-        try:
-            raw_templates = self._cfg.user.attr.templates.__dict__["_cfg"]
-        except directory.config.ConfigAttrError:
-            pass
-        for raw_attr_name, value in raw_templates.items():
-            key = self._normalized_attr_name(raw_attr_name)
-            templates[key] = raw_templates[raw_attr_name]
+        templates = self._read_templates()
 
         # Get default values from a reference object
         if self._args.defaults:
@@ -285,7 +294,7 @@ class UserCommand(Command):
         # create a virtual entry, which never gets committed, just to store attributes
         # we don't know the actual DN yet
         fake_rdn = uid_attr_name + "=_new_"
-        new_attrs = writer.new([fake_rdn, base])
+        new_attrs = CaseInsensitiveWithAliasDict()
 
         # Get all mandatory and required optional attributes into new_attrs
         attr_handlers = {
@@ -293,9 +302,8 @@ class UserCommand(Command):
                 self._cfg.user.attr.uid: "_uid_unique",
                 self._cfg.user.attr.passw: "_create_password"
                 }
-        def resolve_attribute(attr_name):
-            attr_name = self._normalized_attr_name(attr_name)
 
+        def resolve_attribute(attr_name):
             if attr_name in new_attrs: # already resolved
                 return
 
@@ -303,16 +311,12 @@ class UserCommand(Command):
                 # try to interpolate default value recursively
                 while True: # failure is not an option
                     try:
-                        print("attr: %s" % attr_name)
-                        print(dir(new_attrs))
                         if type(templates[attr_name]) is list:
                             default = []
                             for template in templates[attr_name]:
-                                default.append( template.format(**new_attrs) )
-                        elif type(templates[attr_name]) is str:
-                            default = templates[attr_name].format(**new_attrs)
+                                default.append( template.format_map(new_attrs) )
                         else:
-                            raise TypeError("Templates must be strings or lists")
+                            default = templates[attr_name].format_map(new_attrs)
 
                         # TODO: modifiers?
                         break
@@ -335,7 +339,8 @@ class UserCommand(Command):
                 handler = getattr(self, attr_handlers[attr_name])
                 try:
                     default = handler(default)
-                except:
+                except Exception as err:
+                    log.error(err)
                     default = None
 
             if default:
@@ -353,14 +358,14 @@ class UserCommand(Command):
 
             if response == ".":
                 pass
-            elif not new_value:
+            elif not response:
                 new_attrs[attr_name] = default
             else:
                 matches = re.split(r'\s*;\s', response)
-                if matches:
-                    new_attrs[attr_name] = matches
-                else:
+                if len(matches) == 1:
                     new_attrs[attr_name] = response
+                else:
+                    new_attrs[attr_name] = matches
 
         # Resolve each attribute recursively
         for attr_def in self.__user:
