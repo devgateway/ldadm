@@ -1,14 +1,12 @@
 import logging
 import sys
 import random
-import re
 
 import ldap3
 from ldap3 import Connection, ObjectDef, Reader, Writer
 from ldap3.utils.dn import escape_attribute_value, safe_dn
-from ldap3.utils.ciDict import CaseInsensitiveWithAliasDict
 
-from .config import Config, ConfigAttrError
+from .config import Config
 from .console import pretty_print, input_attributes
 
 log = logging.getLogger(__name__)
@@ -251,41 +249,12 @@ class UserCommand(Command):
             msg = "User '%s' already exists" % self._args.newname
             raise RuntimeError(msg) from err
 
-    def _read_templates(self):
-        templates = CaseInsensitiveWithAliasDict()
-
-        try:
-            raw_templates = self._cfg.user.attr.templates.__dict__["_cfg"]
-        except ConfigAttrError:
-            raw_templates = {}
-
-        # read key, value from config; get aliases from schema
-        for raw_attr_name, value in raw_templates.items():
-            names = self._attribute_names(raw_attr_name)
-            log.debug("Reading template for " + ", ".join(names))
-            templates[names] = value if type(value) is list else str(value)
-
-        return templates
-
-    def _attribute_names(self, raw_attr_name):
-        definition = self.__user[raw_attr_name]
-        names = [definition.key]
-        if definition.oid_info:
-            for name in definition.oid_info.name:
-                if definition.key.lower() != name.lower():
-                    log.debug("%s != %s" % (definition.key, name))
-                    names.append(name)
-
-        return templates
-
     def add(self):
-        base = self._cfg.user.base.active
         uid_attr_name = self._cfg.user.attr.uid
-
-        templates = self._read_templates()
 
         # Get default values from a reference object
         if self._args.defaults:
+            base = self._cfg.user.base.active
             query = "%s: %s" % (uid_attr_name, self._args.defaults)
             reader = self._get_reader(base, query)
             reader.search(ldap3.ALL_ATTRIBUTES)
@@ -293,102 +262,18 @@ class UserCommand(Command):
         else:
             source_obj = None
 
-        # Get list of all possible attributes and aliases
-        writer = Writer(
-                connection = self._conn,
-                object_def = self.__user)
-        # create a virtual entry, which never gets committed, just to store attributes
-        # we don't know the actual DN yet
-        fake_rdn = uid_attr_name + "=_new_"
-        new_attrs = CaseInsensitiveWithAliasDict()
-
-        # Get all mandatory and required optional attributes into new_attrs
-        attr_handlers = {
+        handlers = {
                 self._cfg.user.attr.nuid: "_get_unique_id_number",
                 self._cfg.user.attr.uid: "_uid_unique",
                 self._cfg.user.attr.passw: "_create_password"
                 }
 
-        def resolve_attribute(raw_attr_name):
-            names = self._attribute_names(raw_attr_name)
-            log.debug("Attribute %s is %s" % (raw_attr_name, repr(names)))
-            attr_name = names[0]
-
-            if attr_name in new_attrs: # already resolved
-                log.debug("%s already resolved" % attr_name)
-                return
-
-            if attr_name in templates:
-                # try to interpolate default value recursively
-                log.debug("Trying to resolve template %s" % attr_name)
-                while True: # failure is not an option
-                    try:
-                        if type(templates[attr_name]) is list:
-                            default = []
-                            for template in templates[attr_name]:
-                                log.debug("\tAttempting to format '%s'" % template)
-                                default.append( template.format_map(new_attrs) )
-                        else:
-                            log.debug("Attempting to format '%s'" % templates[attr_name])
-                            default = templates[attr_name].format_map(new_attrs)
-
-                        # TODO: modifiers?
-                        break
-                    except KeyError as err:
-                        # key missing yet, try to resolve recursively
-                        key = err.args[0]
-                        log.debug("%s missing yet, resolving recursively" % key)
-                        resolve_attribute(key)
-
-            elif source_obj:
-                # if a reference entry is given, take default value from there
-                try:
-                    default = source_obj[attr_name]
-                except ldap3.core.exceptions.LDAPKeyError:
-                    pass
-
-            else:
-                default = None
-
-            if attr_name in attr_handlers:
-                handler = getattr(self, attr_handlers[attr_name])
-                try:
-                    log.debug("Calling handler %s" % attr_handlers[attr_name])
-                    default = handler(default)
-                except Exception as err:
-                    log.error(err)
-                    default = None
-
-            if default:
-                if type(default) is list:
-                    default_str = "; ".join(default)
-                else:
-                    default_str = str(default)
-
-                prompt = "%s [%s]: " % (attr_name, default_str)
-
-            else:
-                prompt = "%s: " % attr_name
-
-            response = input(prompt)
-
-            if response == ".":
-                pass
-            elif not response:
-                new_attrs[attr_name] = default
-            else:
-                matches = re.split(r'\s*;\s', response)
-                if len(matches) == 1:
-                    new_attrs[names] = response
-                else:
-                    log.debug("Adding as a list")
-                    new_attrs[names] = matches
-
-        # Resolve each attribute recursively
-        for attr_def in self.__user:
-            key = attr_def.key
-            if key in templates or attr_def.mandatory:
-                resolve_attribute(key)
+        User.object_def = self.__user
+        user = User(
+                config_node = self._cfg.user.attr,
+                reference_object = source_obj,
+                handlers = handlers
+                )
 
         # Create a new virtual object
         uid = new_attrs[uid_attr_name]
