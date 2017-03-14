@@ -261,14 +261,20 @@ class UserCommand(Command):
 
         # read key, value from config; get aliases from schema
         for raw_attr_name, value in raw_templates.items():
-            definition = self.__user[raw_attr_name]
-            key = [definition.key]
-            if definition.oid_info:
-                for name in definition.oid_info.name:
-                    if definition.key.lower() != name.lower():
-                        key.append(name)
+            names = self._attribute_names(raw_attr_name)
+            log.debug("Reading template for " + ", ".join(names))
+            templates[names] = value if type(value) is list else str(value)
 
-            templates[key] = value if type(value) is list else str(value)
+        return templates
+
+    def _attribute_names(self, raw_attr_name):
+        definition = self.__user[raw_attr_name]
+        names = [definition.key]
+        if definition.oid_info:
+            for name in definition.oid_info.name:
+                if definition.key.lower() != name.lower():
+                    log.debug("%s != %s" % (definition.key, name))
+                    names.append(name)
 
         return templates
 
@@ -303,19 +309,27 @@ class UserCommand(Command):
                 self._cfg.user.attr.passw: "_create_password"
                 }
 
-        def resolve_attribute(attr_name):
+        def resolve_attribute(raw_attr_name):
+            names = self._attribute_names(raw_attr_name)
+            log.debug("Attribute %s is %s" % (raw_attr_name, repr(names)))
+            attr_name = names[0]
+
             if attr_name in new_attrs: # already resolved
+                log.debug("%s already resolved" % attr_name)
                 return
 
             if attr_name in templates:
                 # try to interpolate default value recursively
+                log.debug("Trying to resolve template %s" % attr_name)
                 while True: # failure is not an option
                     try:
                         if type(templates[attr_name]) is list:
                             default = []
                             for template in templates[attr_name]:
+                                log.debug("\tAttempting to format '%s'" % template)
                                 default.append( template.format_map(new_attrs) )
                         else:
+                            log.debug("Attempting to format '%s'" % templates[attr_name])
                             default = templates[attr_name].format_map(new_attrs)
 
                         # TODO: modifiers?
@@ -323,6 +337,7 @@ class UserCommand(Command):
                     except KeyError as err:
                         # key missing yet, try to resolve recursively
                         key = err.args[0]
+                        log.debug("%s missing yet, resolving recursively" % key)
                         resolve_attribute(key)
 
             elif source_obj:
@@ -338,6 +353,7 @@ class UserCommand(Command):
             if attr_name in attr_handlers:
                 handler = getattr(self, attr_handlers[attr_name])
                 try:
+                    log.debug("Calling handler %s" % attr_handlers[attr_name])
                     default = handler(default)
                 except Exception as err:
                     log.error(err)
@@ -363,9 +379,10 @@ class UserCommand(Command):
             else:
                 matches = re.split(r'\s*;\s', response)
                 if len(matches) == 1:
-                    new_attrs[attr_name] = response
+                    new_attrs[names] = response
                 else:
-                    new_attrs[attr_name] = matches
+                    log.debug("Adding as a list")
+                    new_attrs[names] = matches
 
         # Resolve each attribute recursively
         for attr_def in self.__user:
