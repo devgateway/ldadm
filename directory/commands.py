@@ -8,7 +8,7 @@ from ldap3 import Connection, ObjectDef, Reader, Writer
 from ldap3.utils.dn import escape_attribute_value, safe_dn
 from ldap3.utils.ciDict import CaseInsensitiveWithAliasDict
 
-from .config import Config
+from .config import Config, ConfigAttrError
 from .console import pretty_print, input_attributes
 
 log = logging.getLogger(__name__)
@@ -256,8 +256,8 @@ class UserCommand(Command):
 
         try:
             raw_templates = self._cfg.user.attr.templates.__dict__["_cfg"]
-        except directory.config.ConfigAttrError:
-            pass
+        except ConfigAttrError:
+            raw_templates = {}
 
         # read key, value from config; get aliases from schema
         for raw_attr_name, value in raw_templates.items():
