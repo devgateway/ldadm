@@ -71,46 +71,32 @@ class UserCommand(Command):
                 object_class = self._cfg.user.objectclass,
                 schema = self._conn)
 
-    def _get_unique_id_number(self):
-        user = cfg.user
-        umin = user.nuid.min
-        umax = user.nuid.max
-        attr = user.attr.nuid
+    def _get_unique_id_number(self, *args_ignored):
+        umin = self._cfg.user.nuid.min
+        umax = self._cfg.user.nuid.max
+        attr_name = self._cfg.user.attr.nuid
 
-        steps = 50 # subranges of umin--umax, candidates for the unique UID
-        def ranged_random(step):
-            """Generate a random int in each subrange umin--umax"""
-            step_size = int((umax - umin) / steps)
-            return umin + step_size * step + random.randint(0, step_size)
-
-        # make a list random unique ints, one per subrange
-        nuids = list( map(ranged_random, range(steps)) )
-
-        def remove_collisions(base):
-            """Find existing UIDs and remove them from the candidate UID list"""
-            conditions = map(lambda n: "(%s=%i)" % (attr, n), nuids)
-            filt = "(|%s)" % "".join(conditions)
-
-            log.debug("Searching for UID collisions in '%s'" % base)
-            entries = self._ldap.extend.standard.paged_search(
-                    search_base = base,
-                    search_filter = filt,
-                    search_scope = scope(user.scope),
-                    attributes = attr)
-            for entry in entries:
-                collision = entry["attributes"][attr]
-                nuids.remove(collision)
-                log.debug("UID collision %i skipped" % collision)
+        n = 50 # candidates for the unique UID
+        candidates = set( random.randint(umin, umax) for i in range(n) )
 
         # find existing UIDs, and remove them from the list of candidates
-        remove_collisions(user.base.active)
-        remove_collisions(user.base.suspended)
+        for active in (True, False):
+            query = attr_name + ": " + "; ".join( map(str, candidates) )
+            users = self._search(
+                    attrs = attr_name,
+                    active = active,
+                    query = query)
 
-        if nuids:
+            collisions = set( user[attr_name].value for user in users )
+            candidates -= collisions
+            if collisions:
+                log.debug("UID collisions skipped: " + " ".join(map(str, collisions)))
+
+        try:
             # randomly return one of the remaining candidates
-            return nuids[random.randrange(0, len(nuids))]
-        else:
-            raise NotFound("Couldn't find a unique UID in %i attempts" % steps)
+            return random.choice(list(candidates))
+        except IndexError as err:
+            raise RuntimeError("Couldn't create a unique UID in %i attempts" % n) from err
 
     def _uid_unique(self, uid):
         # check if UID is unique

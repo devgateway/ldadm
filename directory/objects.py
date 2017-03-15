@@ -71,7 +71,6 @@ class User:
 
     def _resolve_attribute(self, raw_name):
         names = self._canonicalize_name(raw_name)
-        log.debug("Attribute %s is %s" % (raw_name, repr(names)))
         key = names[0]
 
         if key in self.attrs: # already resolved
