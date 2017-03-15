@@ -33,6 +33,7 @@ class User:
         self._reference = reference_object
         self._handlers = handlers
         self._templates = self._read_templates(config_node)
+        self._modifiers = self._read_modifiers(config_node)
         self.attrs = CaseInsensitiveWithAliasDict()
 
         self._required_attrs = [ self._canonicalize_name(config_node.passwd)[0] ]
@@ -43,6 +44,27 @@ class User:
             if key in self._templates or key in self._required_attrs or attr_def.mandatory:
                 if key.lower() != "objectclass":
                     self._resolve_attribute(key)
+
+    def _read_modifiers(self, config_node):
+        result = CaseInsensitiveWithAliasDict()
+        safe_modifiers = ['capitalize', 'casefold', 'lower', 'swapcase', 'title', 'upper']
+
+        try:
+            modifiers = config_node.modify.__dict__["_cfg"]
+            # read key, value from config; get aliases from schema
+            for raw_name, value in modifiers.items():
+                if value not in safe_modifiers:
+                    msg = "%s() is not a permitted modifier for %s" % (value, raw_name)
+                    raise ValueError(msg)
+
+                attr_names = self._canonicalize_name(raw_name)
+                result[attr_names] = value
+                log.debug("Modifier for %s: %s" %
+                        (", ".join(attr_names), value))
+        except ConfigAttrError:
+            pass
+
+        return result
 
     def _read_templates(self, config_node):
         result = CaseInsensitiveWithAliasDict()
@@ -87,12 +109,23 @@ class User:
                         default = []
                         for template in self._templates[key]:
                             log.debug("\tAttempting to format '%s'" % template)
-                            default.append( template.format_map(self.attrs) )
+                            value = template.format_map(self.attrs)
+                            if key in self._modifiers:
+                                modifier = self._modifiers[key]
+                                modify = getattr(value, modifier)
+                                log.debug("Applying %s() to '%s'" % (modifier, value))
+                                value = modify()
+
+                            default.append(value)
                     else:
                         log.debug("Attempting to format '%s'" % self._templates[key])
                         default = self._templates[key].format_map(self.attrs)
+                        if key in self._modifiers:
+                            modifier = self._modifiers[key]
+                            modify = getattr(default, modifier)
+                            log.debug("Applying %s() to '%s'" % (modifier, default))
+                            default = modify()
 
-                    # TODO: modifiers?
                     break
                 except KeyError as err:
                     # key missing yet, try to resolve recursively
