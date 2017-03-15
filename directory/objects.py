@@ -90,9 +90,9 @@ class User:
             default = None
 
         if key in self._handlers:
-            handler = getattr(self, self._handlers[key])
+            handler = self._handlers[key]
             try:
-                log.debug("Calling handler %s" % self._handlers[key])
+                log.debug("Calling handler %s" % key)
                 default = handler(default)
             except Exception as err:
                 log.error(err)
@@ -122,3 +122,6 @@ class User:
             else:
                 log.debug("Adding as a list")
                 self.attrs[names] = matches
+
+    def __repr__(self):
+        return repr(self.attrs)

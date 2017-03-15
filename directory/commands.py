@@ -252,10 +252,10 @@ class UserCommand(Command):
 
     def add(self):
         uid_attr_name = self._cfg.user.attr.uid
+        base = self._cfg.user.base.active
 
         # Get default values from a reference object
         if self._args.defaults:
-            base = self._cfg.user.base.active
             query = "%s: %s" % (uid_attr_name, self._args.defaults)
             reader = self._get_reader(base, query)
             reader.search(ldap3.ALL_ATTRIBUTES)
@@ -264,9 +264,9 @@ class UserCommand(Command):
             source_obj = None
 
         handlers = {
-                self._cfg.user.attr.nuid: "_get_unique_id_number",
-                self._cfg.user.attr.uid: "_uid_unique",
-                self._cfg.user.attr.passw: "_create_password"
+                self._cfg.user.attr.nuid: self._get_unique_id_number,
+                self._cfg.user.attr.uid: self._uid_unique,
+                self._cfg.user.attr.passw: self._create_password
                 }
 
         User.object_def = self.__user
@@ -276,8 +276,9 @@ class UserCommand(Command):
                 handlers = handlers
                 )
 
+        log.debug("Final object:\n" + repr(user))
         # Create a new virtual object
-        uid = new_attrs[uid_attr_name]
+        uid = user.attrs[uid_attr_name]
         rdn = "=".join( [uid_attr_name, escape_attribute_value(uid)] )
         dn = safe_dn([rdn, base])
         entry = writer.new(dn)
