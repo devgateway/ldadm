@@ -135,13 +135,19 @@ class User:
         if response == ".":
             pass
         elif not response:
-            self.attrs[names] = default
+            if default:
+                self.attrs[names] = default
+            else:
+                while not response:
+                    log.error("%s requires a value" % key)
+                    response = input(prompt)
+                self.attrs[names] = response
         else:
             matches = re.split(r'\s*;\s', response)
             if len(matches) == 1:
                 self.attrs[names] = response
             else:
-                log.debug("Adding as a list")
+                log.debug("Adding list %s" % repr(matches))
                 self.attrs[names] = matches
 
     def __repr__(self):
