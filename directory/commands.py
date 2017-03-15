@@ -258,7 +258,8 @@ class UserCommand(Command):
         if self._args.defaults:
             query = "%s: %s" % (uid_attr_name, self._args.defaults)
             reader = self._get_reader(base, query)
-            reader.search(ldap3.ALL_ATTRIBUTES)
+            if not reader.search(ldap3.ALL_ATTRIBUTES):
+                raise RuntimeError("User %s not found" % self._args.defaults[0])
             source_obj = reader.entries[0]
         else:
             source_obj = None
@@ -266,7 +267,7 @@ class UserCommand(Command):
         handlers = {
                 self._cfg.user.attr.nuid: self._get_unique_id_number,
                 self._cfg.user.attr.uid: self._uid_unique,
-                self._cfg.user.attr.passw: self._create_password
+                self._cfg.user.attr.passwd: User.make_password
                 }
 
         User.object_def = self.__user
