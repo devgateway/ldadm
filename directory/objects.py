@@ -19,7 +19,7 @@ class User:
         # Resolve each attribute recursively
         for attr_def in __class__.object_def:
             key = attr_def.key
-            if key in templates or attr_def.mandatory:
+            if key in self._templates or attr_def.mandatory:
                 self._resolve_attribute(key)
 
     def _read_templates(self, config_node):

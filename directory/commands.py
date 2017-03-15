@@ -8,6 +8,7 @@ from ldap3.utils.dn import escape_attribute_value, safe_dn
 
 from .config import Config
 from .console import pretty_print, input_attributes
+from .objects import User
 
 log = logging.getLogger(__name__)
 
