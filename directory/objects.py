@@ -1,5 +1,8 @@
-import logging
-import re
+import logging, string, re
+try:
+    import secrets # Python 3.6+
+except ImportError:
+    import random
 
 from ldap3.utils.ciDict import CaseInsensitiveWithAliasDict
 
@@ -10,16 +13,34 @@ log = logging.getLogger(__name__)
 class User:
     object_def = None
 
+    @staticmethod
+    def make_password(*args_ignored):
+        len_min = 10
+        len_max = 18
+        alphabet = string.ascii_letters + string.punctuation + string.digits
+
+        try:
+            length = len_min + secrets.randbelow(len_max - len_min + 1)
+            chars = [ secrets.choice(alphabet) for i in range(length) ]
+        except NameError:
+            log.warning("Python module 'secrets' not available, suggesting insecure password")
+            length = random.randrange(len_min, len_max)
+            chars = [ random.choice(alphabet) for i in range(length) ]
+
+        return ''.join(chars)
+
     def __init__(self, config_node, reference_object = None, handlers = []):
         self._reference = reference_object
         self._handlers = handlers
         self._templates = self._read_templates(config_node)
         self.attrs = CaseInsensitiveWithAliasDict()
 
+        passwd_attr = self._canonicalize_name(config_node.passwd)[0]
+
         # Resolve each attribute recursively
         for attr_def in __class__.object_def:
             key = attr_def.key
-            if key in self._templates or attr_def.mandatory:
+            if key in self._templates or attr_def.mandatory or key == passwd_attr:
                 self._resolve_attribute(key)
 
     def _read_templates(self, config_node):
