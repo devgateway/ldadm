@@ -1,65 +1,71 @@
 _ldadm() {
-	local cur="${COMP_WORDS[COMP_CWORD]}"
-	local kwd_objects="user list"
-	local kwd_suspended="--suspended"
-	local kwd_loglevel="--loglevel"
-	local kwd_defaults="--defaults -d"
-	local obj_start
-	local prev
+	local CUR="${COMP_WORDS[COMP_CWORD]}"
+	local KWD_OBJECTS="user list"
+	local KWD_SUSPENDED="--suspended"
+	local KWD_LOGLEVEL="--loglevel"
+	local KWD_DEFAULTS="--defaults -d"
+	local OBJ_START
+	local PREV
 	local REPLY
 	_init_completion || return
-	COMPREPLY=()
 
-	if [[ "${COMP_WORDS[1]}" = "$kwd_loglevel" ]]; then
-		obj_start=3
+	# detect index of object, such as user, list, etc
+	if [[ "${COMP_WORDS[1]}" = "$KWD_LOGLEVEL" ]]; then
+		OBJ_START=3
 	else
-		obj_start=1
+		OBJ_START=1
 	fi
 
-	case "${COMP_WORDS[obj_start]}" in
-		user) __ldadm_user ;;
-		list) ;;
-		*) __ldadm_default ;;
+	# call per-object completion
+	case "${COMP_WORDS[OBJ_START]}" in
+		user) __ldadm_complete_user ;;
+		list) __ldadm_complete_list ;;
+		*)    __ldadm_complete_default ;;
 	esac
 }
 
-__ldadm_default() {
+# complete log levels or objects
+__ldadm_complete_default() {
 	case $COMP_CWORD in
-		1) REPLY="$kwd_loglevel $kwd_objects" ;;
+		1) REPLY="$KWD_LOGLEVEL $KWD_OBJECTS" ;;
 		2) REPLY="DEBUG INFO WARNING ERROR CRITICAL" ;;
-		3) REPLY="$kwd_objects" ;;
+		3) REPLY="$KWD_OBJECTS" ;;
 		*) REPLY=""
 	esac
 
-	COMPREPLY=($(compgen -W "$REPLY" -- $cur))
+	COMPREPLY=($(compgen -W "$REPLY" -- $CUR))
 }
 
+# list active or suspended users
 __ldadm_list_users() {
 	if [[ $1 = "suspended" ]]; then
-		eval "ldadm user list $kwd_suspended"
+		eval "ldadm user list $KWD_SUSPENDED"
 	else
 		ldadm user list
 	fi
 }
 
-__ldadm_user() {
-	let COMP_CWORD=(COMP_CWORD - obj_start + 1)
-	local users
-	case "${COMP_WORDS[obj_start + 1]}" in
+# complete user commands
+__ldadm_complete_user() {
+	# adjust COMP_CWORD for easier indexing, skip loglevel args
+	let COMP_CWORD=(COMP_CWORD - OBJ_START + 1)
+	local USERS
+
+	case "${COMP_WORDS[OBJ_START + 1]}" in
 		list|search|find)
 			if [[ $COMP_CWORD -eq 3 ]]; then
-				REPLY="$kwd_suspended"
+				REPLY="$KWD_SUSPENDED"
 				compopt -o nospace
 			fi
 			;;
 		info|show)
 			if [[ $COMP_CWORD -eq 3 ]]; then
-				case "$cur" in
-					-*) REPLY="$kwd_suspended" ;;
-					*)  REPLY="$kwd_suspended $(__ldadm_list_users)" ;;
+				case "$CUR" in
+					-*) REPLY="$KWD_SUSPENDED" ;;
+					*)  REPLY="$KWD_SUSPENDED $(__ldadm_list_users)" ;;
 				esac
 			else
-				if [[ "${COMP_WORDS[obj_start + 2]}" = "$kwd_suspended" ]]; then
+				if [[ "${COMP_WORDS[OBJ_START + 2]}" = "$KWD_SUSPENDED" ]]; then
 					REPLY="$(__ldadm_list_users suspended)"
 				else
 					REPLY="$(__ldadm_list_users)"
@@ -73,9 +79,9 @@ __ldadm_user() {
 			REPLY="$(__ldadm_list_users suspended)"
 			;;
 		add|create)
-			users=$(__ldadm_list_users)
+			USERS=$(__ldadm_list_users)
 			case "$COMP_CWORD" in
-				3) REPLY="$kwd_defaults" ;;
+				3) REPLY="$KWD_DEFAULTS" ;;
 				4) REPLY="$(__ldadm_list_users suspended) $(__ldadm_list_users)" ;;
 			esac
 			;;
@@ -85,23 +91,23 @@ __ldadm_user() {
 			fi
 			;;
 		key)
-			local prev
+			local PREV
 			local keycmd="${COMP_WORDS[3]}"
 			users=$(ldadm user list)
 			case "$keycmd" in
 				add|create|delete|remove)
-					prev="${COMP_WORDS[COMP_CWORD - 1]}"
-					if [[ "$prev" == "-f" || "$prev" == "--file" ]]; then
+					PREV="${COMP_WORDS[COMP_CWORD - 1]}"
+					if [[ "$PREV" == "-f" || "$PREV" == "--file" ]]; then
 						_filedir
 					else
-						COMPREPLY=($(compgen -W "-f --file $users" -- $cur))
+						COMPREPLY=($(compgen -W "-f --file $users" -- $CUR))
 					fi
 					;;
 				list|show)
-					COMPREPLY=($(compgen -W "$users" -- $cur))
+					COMPREPLY=($(compgen -W "$users" -- $CUR))
 					;;
 				*)
-					COMPREPLY=($(compgen -W "add create delete remove list show" -- $cur))
+					COMPREPLY=($(compgen -W "add create delete remove list show" -- $CUR))
 			esac
 			;;
 		*)
@@ -109,7 +115,11 @@ __ldadm_user() {
 			unban enable delete remove add create rename key"
 			;;
 	esac
-	COMPREPLY=($(compgen -W "$REPLY" -- $cur))
+	COMPREPLY=($(compgen -W "$REPLY" -- $CUR))
+}
+
+# complete list commands
+__ldadm_complete_list() {
 }
 
 complete -F _ldadm ldadm
