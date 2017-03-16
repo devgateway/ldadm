@@ -115,14 +115,6 @@ single_user_parser.add_argument("username",
         metavar = "USERNAME",
         help = "User ID")
 
-key_from_file = argparse.ArgumentParser(add_help = False)
-key_from_file.add_argument("-f", "--file",
-        dest = "keyfile",
-        metavar = "KEYFILE",
-        type = argparse.FileType('r'),
-        nargs = 1,
-        help = "Read public key from file")
-
 p = key.add_parser("list",
         aliases = ["show"],
         parents = [single_user_parser],
@@ -131,15 +123,25 @@ p.set_defaults(method_name = "list_keys")
 
 p = key.add_parser("add",
         aliases = ["create"],
-        parents = [single_user_parser, key_from_file],
+        parents = [single_user_parser],
         help = "Add a public key to a user")
 p.set_defaults(method_name = "add_key")
+p.add_argument("-f", "--file",
+        dest = "keyfile",
+        metavar = "KEYFILE",
+        type = argparse.FileType('r'),
+        nargs = 1,
+        help = "Read public key from file")
 
 p = key.add_parser("delete",
         aliases = ["remove"],
-        parents = [single_user_parser, key_from_file],
+        parents = [single_user_parser],
         help = "Remove a public key from a user")
 p.set_defaults(method_name = "delete_key")
+p.add_argument("moduli",
+        metavar = "MODULUS",
+        nargs = "+",
+        help = "Public key modulus")
 
 # List commands
 
