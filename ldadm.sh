@@ -1,3 +1,7 @@
+_log() {
+	echo "[$(date +%r)] WORDS: $COMP_WORDS; CWORD=$COMP_CWORD; $@" >>/tmp/compl.log
+}
+
 _ldadm() {
 	local cur="${COMP_WORDS[COMP_CWORD]}"
 	local kwd_objects="user list"
@@ -37,12 +41,11 @@ _ldadm() {
 
 _ldadm_user() {
 	local users
-	case "${COMP_WORDS[obj_start]}" in
+	case "${COMP_WORDS[obj_start + 1]}" in
 		list|search|find)
-			if [[ $COMP_CWORD -eq $(($obj_start + 1)) ]]; then
+			if [[ $COMP_CWORD -eq $(($obj_start + 2)) ]]; then
 				COMPREPLY=($(compgen -W "--suspended" -- $cur))
-			else
-				COMPREPLY=()
+				compopt -o nospace
 			fi
 			;;
 		info|show)
