@@ -260,20 +260,27 @@ class UserCommand(Command):
 
         User.object_def = self.__user
         user = User(
-                config_node = self._cfg.user.attr,
+                config_node = self._cfg.user,
                 reference_object = source_obj,
                 handlers = handlers
                 )
 
         log.debug("Final object:\n" + repr(user))
+
         # Create a new virtual object
         uid = user.attrs[uid_attr_name]
         rdn = "=".join( [uid_attr_name, escape_attribute_value(uid)] )
         dn = safe_dn([rdn, base])
+        query = "%s: %s" % (uid_attr_name, uid)
+        writer = self._get_writer(base, query)
         entry = writer.new(dn)
 
         # Set object properties from ciDict
+        for key in user.attrs:
+            setattr(entry, key, user.attrs[key])
+
         # Write the object to LDAP
+        entry.entry_commit_changes(refresh = False)
 
 ##    def list_keys(self):
 #    def add_key(self):

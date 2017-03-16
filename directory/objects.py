@@ -40,13 +40,15 @@ class User:
         self._modifiers = self._read_modifiers(config_node)
         self.attrs = CaseInsensitiveWithAliasDict()
 
-        self._required_attrs = [ self._canonicalize_name(config_node.passwd)[0] ]
+        self._required_attrs = [ self._canonicalize_name(config_node.attr.passwd)[0] ]
 
         # Resolve each attribute recursively
         for attr_def in __class__.object_def:
             key = attr_def.key
             if key in self._templates or key in self._required_attrs or attr_def.mandatory:
-                if key.lower() != "objectclass":
+                if key.lower() == "objectclass":
+                    self.attrs[key] = config_node.objectclass
+                else:
                     self._resolve_attribute(key)
 
     def _read_modifiers(self, config_node):
@@ -56,7 +58,7 @@ class User:
         safe_modifiers = ['capitalize', 'casefold', 'lower', 'swapcase', 'title', 'upper']
 
         try:
-            modifiers = config_node.modify.__dict__["_cfg"]
+            modifiers = config_node.attr.modify.__dict__["_cfg"]
             # read key, value from config; get aliases from schema
             for raw_name, value in modifiers.items():
                 if value not in safe_modifiers:
@@ -77,7 +79,7 @@ class User:
         result = CaseInsensitiveWithAliasDict()
 
         try:
-            templates = config_node.templates.__dict__["_cfg"]
+            templates = config_node.attr.templates.__dict__["_cfg"]
             # read key, value from config; get aliases from schema
             for raw_name, value in templates.items():
                 attr_names = self._canonicalize_name(raw_name)
