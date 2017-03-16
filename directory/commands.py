@@ -99,15 +99,17 @@ class UserCommand(Command):
             raise RuntimeError("Couldn't create a unique UID in %i attempts" % n) from err
 
     def _uid_unique(self, uid):
-        # check if UID is unique
+        # raise an exception if UID is not unique
         for active in (True, False):
-            try:
-                self._get_single_entry(uid, active = active)
-                return False
-            except NotFound:
-                pass
-
-        return True
+            query = "%s: %s" % (self._cfg.user.attr.uid, uid)
+            users = self._search(
+                    attrs = None,
+                    query = query,
+                    active = active)
+            if len(list(users)):
+                status = "an active" if active else "a suspended"
+                raise RuntimeError("UID %s in use by %s user" % (uid, status))
+        return uid
 
     @staticmethod
     def __assert_empty(usernames, critical = True):
