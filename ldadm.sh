@@ -1,106 +1,87 @@
-_log() {
-	echo "[$(date +%r)] WORDS: $COMP_WORDS; CWORD=$COMP_CWORD; $@" >>/tmp/compl.log
-}
-
 _ldadm() {
 	local cur="${COMP_WORDS[COMP_CWORD]}"
 	local kwd_objects="user list"
-	local levels="DEBUG INFO WARNING ERROR CRITICAL"
+	local kwd_suspended="--suspended"
 	local kwd_loglevel="--loglevel"
+	local kwd_defaults="--defaults -d"
 	local obj_start
 	local prev
-	local words
+	local REPLY
 	_init_completion || return
 	COMPREPLY=()
 
-	prev="${COMP_WORDS[COMP_CWORD-1]}"
-
-	case "${COMP_WORDS[1]}" in
-		$kwd_loglevel)
-			obj_start=3
-			if [[ $COMP_CWORD -eq 2 ]]; then
-				COMPREPLY=($(compgen -W "$levels" -- $cur))
-				return 0
-			fi
-			words="$kwd_objects"
-			;;
-		*)
-			obj_start=1
-			words="$kwd_objects $kwd_loglevel"
-			;;
-	esac
+	if [[ "${COMP_WORDS[1]}" = "$kwd_loglevel" ]]; then
+		obj_start=3
+	else
+		obj_start=1
+	fi
 
 	case "${COMP_WORDS[obj_start]}" in
-		user) _ldadm_user ;;
+		user) __ldadm_user ;;
 		list) ;;
-		*)
-			COMPREPLY=($(compgen -W "$words" -- $cur))
-			;;
+		*) __ldadm_default ;;
 	esac
 }
 
-_ldadm_user() {
-	local users
+__ldadm_default() {
+	case $COMP_CWORD in
+		1) REPLY="$kwd_loglevel $kwd_objects" ;;
+		2) REPLY="DEBUG INFO WARNING ERROR CRITICAL" ;;
+		3) REPLY="$kwd_objects" ;;
+		*) REPLY=""
+	esac
+
+	COMPREPLY=($(compgen -W "$REPLY" -- $cur))
+}
+
+__ldadm_list_users() {
+	if [[ $1 = "suspended" ]]; then
+		eval "ldadm user list $kwd_suspended"
+	else
+		ldadm user list
+	fi
+}
+
+__ldadm_user() {
 	let COMP_CWORD=(COMP_CWORD - obj_start + 1)
+	local users
 	case "${COMP_WORDS[obj_start + 1]}" in
 		list|search|find)
 			if [[ $COMP_CWORD -eq 3 ]]; then
-				COMPREPLY=($(compgen -W "--suspended" -- $cur))
+				REPLY="$kwd_suspended"
 				compopt -o nospace
 			fi
 			;;
 		info|show)
-			case "$COMP_CWORD" in
-				3)
-					case "$cur" in
-						-*)
-							COMPREPLY=($(compgen -W "--suspended" -- $cur))
-							return 0
-							;;
-						*)
-							users=$(ldadm user list)
-							COMPREPLY=($(compgen -W "$users" -- $cur))
-							return 0
-							;;
-					esac
-					;;
-				4)
-					if [[ "${COMP_WORDS[3]}" = "--suspended" ]]; then
-						users=$(ldadm user list --suspended)
-					else
-						users=$(ldadm user list)
-					fi
-					COMPREPLY=($(compgen -W "$users" -- $cur))
-			esac
+			if [[ $COMP_CWORD -eq 3 ]]; then
+				case "$cur" in
+					-*) REPLY="$kwd_suspended" ;;
+					*)  REPLY="$kwd_suspended $(__ldadm_list_users)" ;;
+				esac
+			else
+				if [[ "${COMP_WORDS[obj_start + 2]}" = "$kwd_suspended" ]]; then
+					REPLY="$(__ldadm_list_users suspended)"
+				else
+					REPLY="$(__ldadm_list_users)"
+				fi
+			fi
 			;;
 		suspend|ban|lock|disable)
-			users=$(ldadm user list)
-			COMPREPLY=($(compgen -W "$users" -- $cur))
+			REPLY="$(__ldadm_list_users)"
 			;;
-		restore|unban|enable)
-			users=$(ldadm user list --suspended)
-			COMPREPLY=($(compgen -W "$users" -- $cur))
-			;;
-		delete|remove)
-			users=$(ldadm user list --suspended)
-			COMPREPLY=($(compgen -W "$users" -- $cur))
+		restore|unban|enable|delete|remove)
+			REPLY="$(__ldadm_list_users suspended)"
 			;;
 		add|create)
-			users=$(ldadm user list)
+			users=$(__ldadm_list_users)
 			case "$COMP_CWORD" in
-				3)
-					COMPREPLY=($(compgen -W "-t --template $users" -- $cur))
-					;;
-				4)
-					users=$(ldadm user list)
-					COMPREPLY=($(compgen -W "$users" -- $cur))
-					;;
+				3) REPLY="$kwd_defaults" ;;
+				4) REPLY="$(__ldadm_list_users suspended) $(__ldadm_list_users)" ;;
 			esac
 			;;
 		rename)
 			if [[ $COMP_CWORD -eq 3 ]]; then
-				users=$(ldadm user list)
-				COMPREPLY=($(compgen -W "$users" -- $cur))
+				REPLY="$(__ldadm_list_users)"
 			fi
 			;;
 		key)
@@ -124,11 +105,11 @@ _ldadm_user() {
 			esac
 			;;
 		*)
-			COMPREPLY=($(compgen -W "list search find show info suspend ban lock
-			disable restore unban enable delete remove add create rename key
-			" -- $cur))
+			REPLY="list search find show info suspend ban lock disable restore
+			unban enable delete remove add create rename key"
 			;;
 	esac
+	COMPREPLY=($(compgen -W "$REPLY" -- $cur))
 }
 
 complete -F _ldadm ldadm
