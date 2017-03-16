@@ -41,9 +41,10 @@ _ldadm() {
 
 _ldadm_user() {
 	local users
+	let COMP_CWORD=(COMP_CWORD - obj_start + 1)
 	case "${COMP_WORDS[obj_start + 1]}" in
 		list|search|find)
-			if [[ $COMP_CWORD -eq $(($obj_start + 2)) ]]; then
+			if [[ $COMP_CWORD -eq 3 ]]; then
 				COMPREPLY=($(compgen -W "--suspended" -- $cur))
 				compopt -o nospace
 			fi
