@@ -1,33 +1,23 @@
 _ldadm() {
 	local cur="${COMP_WORDS[COMP_CWORD]}"
-	local objects="user list"
+	local kwd_objects="user list"
 	local levels="DEBUG INFO WARNING ERROR CRITICAL"
 	local kwd_loglevel="--loglevel"
+	local object_idx
+	local prev
 	_init_completion || return
 	COMPREPLY=()
 
-	case $COMP_CWORD in
-		1)
-			case "$cur" in
-				-*)
-					COMPREPLY=($(compgen -W "$kwd_loglevel" -- $cur))
-					;;
-				*)
-					COMPREPLY=($(compgen -W "$kwd_loglevel $objects" -- $cur))
-					;;
-			esac
-			;;
-		2)
-			if [[ "${COMP_WORDS[1]}" = "$kwd_loglevel" ]]; then
-				COMPREPLY=($(compgen -W "$levels" -- $cur))
-			else
-				echo -e "\nCOMP_CWORD=$COMP_CWORD; COMP_WORDS[1]='${COMP_WORDS[1]}'"
-			fi
-			;;
-		*)
-			echo "COMP_CWORD=$COMP_CWORD"
-			;;
-	esac
+	if [[ $COMP_CWORD -eq 1 ]]; then
+		COMPREPLY=($(compgen -W "$kwd_loglevel $kwd_objects" -- $cur))
+	else
+		prev="${COMP_WORDS[COMP_CWORD-1]}"
+		if [[ "$prev" = "$kwd_loglevel" ]]; then
+			COMPREPLY=($(compgen -W "$levels" -- $cur))
+		else
+			echo -e "\nCOMP_CWORD=$COMP_CWORD; COMP_WORDS[1]='${COMP_WORDS[1]}'"
+		fi
+	fi
 
 	#case "${COMP_WORDS[1]}" in
 	#	user)
