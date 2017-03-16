@@ -4,6 +4,7 @@ _ldadm() {
 	local KWD_SUSPENDED="--suspended"
 	local KWD_LOGLEVEL="--loglevel"
 	local KWD_DEFAULTS="--defaults -d"
+	local KWD_FILE="--file -f"
 	local OBJ_START
 	local PREV
 	local REPLY
@@ -92,22 +93,23 @@ __ldadm_complete_user() {
 			;;
 		key)
 			local PREV
-			local keycmd="${COMP_WORDS[3]}"
-			users=$(ldadm user list)
-			case "$keycmd" in
-				add|create|delete|remove)
-					PREV="${COMP_WORDS[COMP_CWORD - 1]}"
-					if [[ "$PREV" == "-f" || "$PREV" == "--file" ]]; then
-						_filedir
+			USERS=$(__ldadm_list_users)
+			case "${COMP_WORDS[OBJ_START + 2]}" in
+				add|create)
+					case $COMP_CWORD in
+						4) REPLY="$KWD_FILE" ;;
+						5) _filedir; return 0 ;;
+					esac
+					;;
+				delete|remove)
+					if [[ $COMP_CWORD -eq 4 ]]; then
+						REPLY="$(__ldadm_list_users)"
 					else
-						COMPREPLY=($(compgen -W "-f --file $users" -- $CUR))
+						return 0
 					fi
 					;;
-				list|show)
-					COMPREPLY=($(compgen -W "$users" -- $CUR))
-					;;
-				*)
-					COMPREPLY=($(compgen -W "add create delete remove list show" -- $CUR))
+				list|show) REPLY="$(__ldadm_list_users)" ;;
+				*) REPLY="add create delete remove list show" ;;
 			esac
 			;;
 		*)
@@ -120,6 +122,7 @@ __ldadm_complete_user() {
 
 # complete list commands
 __ldadm_complete_list() {
+	return 1
 }
 
 complete -F _ldadm ldadm
