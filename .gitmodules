@@ -1,0 +1,6 @@
+[submodule "ldap3"]
+	path = ldap3
+	url = https://github.com/cannatag/ldap3.git
+[submodule "python-sshpubkeys"]
+	path = python-sshpubkeys
+	url = https://github.com/ojarva/python-sshpubkeys.git
