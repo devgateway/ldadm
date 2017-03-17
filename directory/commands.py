@@ -5,6 +5,7 @@ import random
 import ldap3
 from ldap3 import Connection, ObjectDef, Reader, Writer
 from ldap3.utils.dn import escape_attribute_value, safe_dn
+from sshpubkeys import SSHKey, InvalidKeyError
 
 from .config import Config
 from .console import pretty_print, input_attributes
@@ -282,7 +283,46 @@ class UserCommand(Command):
         # Write the object to LDAP
         entry.entry_commit_changes(refresh = False)
 
-##    def list_keys(self):
+    def list_keys(self):
+        username = self._args.username
+        pubkey_attr = self._cfg.user.attr.pubkey
+        base = self._cfg.user.base.active
+        query = "%s: %s" % (self._cfg.user.attr.uid, username)
+
+        reader = self._get_reader(base, query)
+        if not reader.search(pubkey_attr):
+            raise RuntimeError("User %s not found" % username)
+
+        try:
+            keys = reader.entries[0][pubkey_attr]
+        except Exception:
+            log.warning("User %s has no public keys" % usernames)
+            return
+
+        for key in keys:
+            if type(key) is bytes:
+                key_string = key.decode("utf-8")
+            elif type(key) is str:
+                key_string = key
+            else:
+                raise TypeError("Public key must be bytes or str")
+
+            try:
+                pk = SSHKey(key_string)
+                pk.parse()
+                if pk.comment:
+                    desc = "%s (%s)" % (pk.hash_md5(), pk.comment)
+                else:
+                    desc = pk.hash_md5()
+                print(desc)
+                continue
+
+            except NotImplementedError as err:
+                log.warning("User %s has an unsupported key: " % (username, err))
+            except InvalidKeyError as err:
+                log.error("User %s has an invalid key: " % (username, err))
+            print("(Cannot display key)")
+
 #    def add_key(self):
 #        pass
 ##    def delete_key(self):
