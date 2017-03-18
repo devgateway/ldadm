@@ -316,17 +316,17 @@ class UserCommand(Command):
                 pk = SSHKey(key_string)
                 pk.parse()
                 if pk.comment:
-                    desc = "%s (%s)" % (pk.hash_md5(), pk.comment)
+                    output = "%s (%s)" % (pk.hash_md5(), pk.comment)
                 else:
-                    desc = pk.hash_md5()
-                print(desc)
-                continue
-
+                    output = pk.hash_md5()
             except NotImplementedError as err:
                 log.warning("User %s has an unsupported key: " % (username, err))
+                output = "(Unsupported key)"
             except InvalidKeyError as err:
                 log.error("User %s has an invalid key: " % (username, err))
-            print("(Cannot display key)")
+                output = "(Invalid key)"
+
+            print(output)
 
 #    def add_key(self):
 #        pass
