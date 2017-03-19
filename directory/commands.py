@@ -42,16 +42,22 @@ class Command:
         return conn
 
     def _args_or_stdin(self, argname):
+        def from_stream(file_object):
+            with file_object:
+                for line in file_object:
+                    yield line[:-1] # in text mode linesep is always "\n"
+
         args = getattr(self._args, argname)
         if args:
             if not sys.__stdin__.isatty():
                 log.warning("Standard input ignored, because arguments are present")
-            for arg in args:
-                yield arg
+            if type(args) is list:
+                for arg in args:
+                    yield arg
+            else:
+                return from_stream(args)
         else:
-            with sys.__stdin__ as stdin:
-                for line in stdin:
-                    yield line[:-1] # in text mode linesep is always "\n"
+            return from_stream(sys.__stdin__)
 
     @staticmethod
     def _get_new_rdn(entry, attr_name, new_val):
