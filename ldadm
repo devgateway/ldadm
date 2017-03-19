@@ -138,10 +138,10 @@ p = key.add_parser("delete",
         parents = [single_user_parser],
         help = "Remove a public key from a user")
 p.set_defaults(method_name = "delete_key")
-p.add_argument("moduli",
-        metavar = "MODULUS",
+p.add_argument("key_names",
+        metavar = "KEY_NAME",
         nargs = "*",
-        help = "Public key modulus")
+        help = "Public key MD5 modulus or comment")
 
 # List commands
 

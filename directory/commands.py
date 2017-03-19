@@ -346,8 +346,13 @@ class UserCommand(Command):
 
         # read args; make a dict of moduli with no delimiters
         keys_to_delete = {}
-        for val in self._args_or_stdin("moduli"):
-            keys_to_delete[ just_hex(val) ] = val
+        for val in self._args_or_stdin("key_names"):
+            try:
+                # assume it's MD5
+                keys_to_delete[ just_hex(val) ] = val
+            except AttributeError:
+                # else it's a comment
+                keys_to_delete[val] = val
 
         # get the writable entry
         pubkey_attr = self._cfg.user.attr.pubkey
@@ -360,9 +365,9 @@ class UserCommand(Command):
         except KeyError as err:
             raise RuntimeError("User %s not found" % username) from err
 
-        keys = user[pubkey_attr]
-
         try:
+            keys = user[pubkey_attr]
+
             # compare each key hash with that dict, then delete matching
             for key in user[pubkey_attr].values:
                 if type(key) is bytes:
@@ -375,10 +380,12 @@ class UserCommand(Command):
                 pk = SSHKey(key_string)
                 pk.parse()
                 modulus = just_hex( pk.hash_md5() )
+                comment = pk.comment
 
-                if modulus in keys_to_delete:
-                    keys -= key
-                    del keys_to_delete[modulus]
+                for item in (modulus, comment):
+                    if item in keys_to_delete:
+                        keys -= key
+                        del keys_to_delete[item]
 
             writer.commit(refresh = False)
 
