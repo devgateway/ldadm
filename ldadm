@@ -54,7 +54,7 @@ search.set_defaults(method_name = "search")
 
 multi_user_parser = argparse.ArgumentParser(add_help = False)
 multi_user_parser.add_argument("username",
-        metavar = "USERNAME",
+        metavar = "USER_NAME",
         nargs = "*",
         help = "One or more UIDs. If omitted, read from stdin.")
 
@@ -93,17 +93,17 @@ user_add = user.add_parser("add",
 user_add.set_defaults(method_name = "add")
 user_add.add_argument("-d", "--defaults",
         dest = "defaults",
-        metavar = "USERNAME",
+        metavar = "USER_NAME",
         nargs = 1,
         help = "Suggest defaults from an existing user")
 
 user_rename = user.add_parser("rename",
         help = "Change account UID")
 user_rename.add_argument("oldname",
-        metavar = "OLDNAME",
+        metavar = "OLD_NAME",
         help = "Old UID")
 user_rename.add_argument("newname",
-        metavar = "NEWNAME",
+        metavar = "NEW_NAME",
         help = "New UID")
 user_rename.set_defaults(method_name = "rename")
 
@@ -115,7 +115,7 @@ key = key_parser.add_subparsers(title = "Key command")
 
 single_user_parser = argparse.ArgumentParser(add_help = False)
 single_user_parser.add_argument("username",
-        metavar = "USERNAME",
+        metavar = "USER_NAME",
         help = "User ID")
 
 p = key.add_parser("list",
@@ -131,7 +131,7 @@ p = key.add_parser("add",
 p.set_defaults(method_name = "add_key")
 p.add_argument("-f", "--file",
         dest = "key_file",
-        metavar = "KEYFILE",
+        metavar = "FILE_NAME",
         type = argparse.FileType('r'),
         nargs = 1,
         help = "Read public key from file")
