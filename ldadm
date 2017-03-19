@@ -127,7 +127,7 @@ p = key.add_parser("add",
         help = "Add a public key to a user")
 p.set_defaults(method_name = "add_key")
 p.add_argument("-f", "--file",
-        dest = "keyfile",
+        dest = "key_file",
         metavar = "KEYFILE",
         type = argparse.FileType('r'),
         nargs = 1,

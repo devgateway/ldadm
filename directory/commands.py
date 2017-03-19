@@ -6,7 +6,7 @@ import re
 import ldap3
 from ldap3 import Connection, ObjectDef, Reader, Writer
 from ldap3.utils.dn import escape_attribute_value, safe_dn
-from ldap3.core.exceptions import LDAPKeyError
+from ldap3.core.exceptions import LDAPKeyError, LDAPAttributeOrValueExistsResult
 from sshpubkeys import SSHKey, InvalidKeyError
 
 from .config import Config
@@ -42,22 +42,21 @@ class Command:
         return conn
 
     def _args_or_stdin(self, argname):
-        def from_stream(file_object):
-            with file_object:
-                for line in file_object:
-                    yield line[:-1] # in text mode linesep is always "\n"
-
         args = getattr(self._args, argname)
         if args:
             if not sys.__stdin__.isatty():
                 log.warning("Standard input ignored, because arguments are present")
-            if type(args) is list:
+            if hasattr(args[0], "read"):
+                with args[0] as file_object:
+                    for line in file_object:
+                        yield line[:-1] # in text mode linesep is always "\n"
+            else:
                 for arg in args:
                     yield arg
-            else:
-                return from_stream(args)
         else:
-            return from_stream(sys.__stdin__)
+            with sys.__stdin__ as file_object:
+                for line in file_object:
+                    yield line[:-1] # in text mode linesep is always "\n"
 
     @staticmethod
     def _get_new_rdn(entry, attr_name, new_val):
@@ -337,8 +336,37 @@ class UserCommand(Command):
 
             print(output)
 
-#    def add_key(self):
-#        pass
+    def add_key(self):
+        username = self._args.username
+
+        # get the writable entry
+        pubkey_attr = self._cfg.user.attr.pubkey
+        base = self._cfg.user.base.active
+        query = "%s: %s" % (self._cfg.user.attr.uid, username)
+
+        try:
+            writer = self._get_writer(base, query, attrs = pubkey_attr)
+            user = writer[0]
+        except KeyError as err:
+            raise RuntimeError("User %s not found" % username) from err
+
+        keys = user[pubkey_attr]
+
+        # parse each key; warn on unsupported, fail on invalid
+        for key_string in self._args_or_stdin("key_file"):
+            try:
+                pk = SSHKey(key_string)
+                pk.parse()
+            except NotImplementedError as err:
+                log.warning("Unsupported key: %s" % err)
+
+            keys += key_string
+
+        try:
+            writer.commit(refresh = False)
+        except LDAPAttributeOrValueExistsResult as err:
+            raise RuntimeError("Key already exists") from err
+
     def delete_key(self):
         username = self._args.username
         re_md5 = re.compile(r"([0-9A-Fa-f]{2}.?){15}[0-9A-Fa-f]{2}$")
@@ -356,7 +384,7 @@ class UserCommand(Command):
             try:
                 # assume it's MD5
                 keys_to_delete[ just_hex(val) ] = val
-            except AttributeError:
+            except ValueError:
                 # else it's a comment
                 keys_to_delete[val] = val
 
