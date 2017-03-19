@@ -140,7 +140,7 @@ p = key.add_parser("delete",
 p.set_defaults(method_name = "delete_key")
 p.add_argument("moduli",
         metavar = "MODULUS",
-        nargs = "+",
+        nargs = "*",
         help = "Public key modulus")
 
 # List commands

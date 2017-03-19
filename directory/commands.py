@@ -1,6 +1,7 @@
 import logging
 import sys
 import random
+import re
 
 import ldap3
 from ldap3 import Connection, ObjectDef, Reader, Writer
@@ -139,7 +140,7 @@ class UserCommand(Command):
             user.entry_move(base_to)
             usernames.remove(uid)
 
-        users.commit()
+        users.commit(refresh = False)
 
         self.__assert_empty(usernames)
 
@@ -218,8 +219,10 @@ class UserCommand(Command):
                 object_def = self.__user,
                 sub_tree = sub_tree)
 
-    def _get_writer(self, base, query):
-        attrs = self._cfg.user.attr.uid
+    def _get_writer(self, base, query, attrs = None):
+        if not attrs:
+            attrs = self._cfg.user.attr.uid
+
         reader = self._get_reader(base, query)
         reader.search(attrs)
         return Writer.from_cursor(reader)
@@ -330,4 +333,58 @@ class UserCommand(Command):
 
 #    def add_key(self):
 #        pass
-##    def delete_key(self):
+    def delete_key(self):
+        username = self._args.username
+        re_md5 = re.compile(r"([0-9A-Fa-f]{2}.?){15}[0-9A-Fa-f]{2}$")
+
+        def just_hex(md5_str):
+            match = re_md5.search(md5_str)
+            try:
+                return match.group(0).lower()
+            except AttributeError as err:
+                raise ValueError("Invalid MD5 hash: %s" % md5_str) from err
+
+        # read args; make a dict of moduli with no delimiters
+        keys_to_delete = {}
+        for val in self._args_or_stdin("moduli"):
+            keys_to_delete[ just_hex(val) ] = val
+
+        # get the writable entry
+        pubkey_attr = self._cfg.user.attr.pubkey
+        base = self._cfg.user.base.active
+        query = "%s: %s" % (self._cfg.user.attr.uid, username)
+
+        try:
+            writer = self._get_writer(base, query, attrs = pubkey_attr)
+            user = writer[0]
+        except KeyError as err:
+            raise RuntimeError("User %s not found" % username) from err
+
+        keys = user[pubkey_attr]
+
+        try:
+            # compare each key hash with that dict, then delete matching
+            for key in user[pubkey_attr].values:
+                if type(key) is bytes:
+                    key_string = key.decode("utf-8")
+                elif type(key) is str:
+                    key_string = key
+                else:
+                    raise TypeError("Public key must be bytes or str")
+
+                pk = SSHKey(key_string)
+                pk.parse()
+                modulus = just_hex( pk.hash_md5() )
+
+                if modulus in keys_to_delete:
+                    keys -= key
+                    del keys_to_delete[modulus]
+
+            writer.commit(refresh = False)
+
+            if keys_to_delete:
+                missing_keys = ", ".join( keys_to_delete.values() )
+                log.warning("Keys not found for user %s: %s" % (username, missing_keys) )
+
+        except LDAPKeyError:
+            log.info("User %s has no public keys" % username)
