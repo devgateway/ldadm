@@ -329,10 +329,10 @@ class UserCommand(Command):
                 else:
                     output = pk.hash_md5()
             except NotImplementedError as err:
-                log.warning("User %s has an unsupported key: " % (username, err))
+                log.warning("User %s has an unsupported key: %s" % (username, err))
                 output = "(Unsupported key)"
             except InvalidKeyError as err:
-                log.error("User %s has an invalid key: " % (username, err))
+                log.error("User %s has an invalid key: %s" % (username, err))
                 output = "(Invalid key)"
 
             print(output)
