@@ -37,14 +37,16 @@ only_suspended.add_argument("--suspended",
         help = "Only include suspended users")
 
 p = user.add_parser("list",
-        parents = [only_suspended])
+        parents = [only_suspended],
+        help = "List all active or suspended users")
 p.set_defaults(method_name = "list_users")
 
 search = user.add_parser("search",
         parents = [only_suspended],
-        aliases = ["find"])
+        aliases = ["find"],
+        help = "Search users with LDAP filter")
 search.add_argument("filter",
-        metavar = "FILTER",
+        metavar = "LDAP_FILTER",
         help = "Search filter")
 search.set_defaults(method_name = "search")
 
@@ -80,7 +82,7 @@ p.set_defaults(method_name = "restore")
 p = user.add_parser("delete",
         aliases = ["remove"],
         parents = [multi_user_parser],
-        help = "Irreversibly destroy accounts")
+        help = "Irreversibly destroy suspended accounts")
 p.set_defaults(method_name = "delete")
 
 # Other user commands
@@ -107,7 +109,8 @@ user_rename.set_defaults(method_name = "rename")
 
 # Public key commands
 
-key_parser = user.add_parser("key")
+key_parser = user.add_parser("key",
+        help = "Manipulate user SSH public key")
 key = key_parser.add_subparsers(title = "Key command")
 
 single_user_parser = argparse.ArgumentParser(add_help = False)
