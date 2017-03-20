@@ -8,7 +8,11 @@ _ldadm() {
 	local OBJ_START
 	local PREV
 	local REPLY
-	_init_completion || return
+	local COMPLETION_LIB=
+	if [[ -n "$(type _init_completion 2>/dev/null)" ]]; then
+		_init_completion
+		COMPLETION_LIB=y
+	fi
 
 	# detect index of object, such as user, list, etc
 	if [[ "${COMP_WORDS[1]}" = "$KWD_LOGLEVEL" ]]; then
@@ -98,7 +102,14 @@ __ldadm_complete_user() {
 				add|create)
 					case $COMP_CWORD in
 						4) REPLY="$KWD_FILE" ;;
-						5) _filedir; return 0 ;;
+						5)
+							if [[ -n "$COMPLETION_LIB" ]]; then
+								_filedir
+							else
+								compopt -o default
+							fi
+							return 0
+							;;
 					esac
 					;;
 				delete|remove)
