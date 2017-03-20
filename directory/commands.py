@@ -292,6 +292,10 @@ class UserCommand(Command):
         # Write the object to LDAP
         entry.entry_commit_changes(refresh = False)
 
+        # Print the message
+        if user.message:
+            print(user.message)
+
     def _get_keys(self, username):
         pubkey_attr = self._cfg.user.attr.pubkey
         base = self._cfg.user.base.active

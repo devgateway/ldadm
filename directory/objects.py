@@ -40,8 +40,27 @@ class User:
         self._templates = self._read_templates(config_node)
         self._modifiers = self._read_modifiers(config_node)
         self.attrs = CaseInsensitiveWithAliasDict()
+        self.message = ""
 
         self._required_attrs = [ self._canonicalize_name(config_node.attr.passwd)[0] ]
+
+        # resolve a message that will be output
+        try:
+            log.debug("Attempting to format creation message")
+            message_template = config_node.message_on_create
+            while True: # failure is not an option
+                try:
+                    self.message = message_template.format_map(self.attrs)
+                    break
+                except KeyError as err:
+                    # key missing yet, try to resolve recursively
+                    missing_key = err.args[0]
+                    log.debug("%s missing yet, resolving recursively" % missing_key)
+                    self._resolve_attribute(missing_key)
+
+        except ConfigAttrError:
+            log.debug("Template not set for creation message, skipping")
+            pass # if this dict is missing, ignore
 
         # Resolve each attribute recursively
         for attr_def in __class__.object_def:
