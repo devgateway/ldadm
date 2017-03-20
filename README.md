@@ -114,3 +114,47 @@ Delete public keys from the user by MD5 hash or comment. MD5 prefix and separato
 	ldadm user key add [{-f|--file} FILE_NAME] USER_NAME
 
 Add public keys to the user, reading one key per line from the given file, or standard input. Only single-line keys (OpenSSH format) are supported, not PEM-encoded PKCS#1 ones.
+
+## Configuration file
+
+The program will look for the configuration file in these locations:
+
+1. `${XDG_CONFIG_HOME}/ldadm.yml`
+
+2. `${HOME}/.config/ldadm.yml`
+
+The first file found will be used. The file is in [YAML format](http://yaml.org/).
+
+### Section `ldap`
+
+Contains generic parameters for LDAP server connection and search.
+
+* `uri` — LDAP server URI. Everything permitted by libldap is accepted, including port specification and space-separated multiple URIs.
+
+* `binddn`, `bindpw` — optional DN and password to connect as. If omitted, anonymous bind is used.
+
+* `paged_search_size` — multiple object operations are performed using paged search, fetching this many objects at a time. Be sure to set it lower than your server search size limit (default is usually 500).
+
+### Section `user`
+
+Contains settings and templates for user account objects.
+
+* `base` — a dictionary with LDAP search bases for user accounts: `active` and `suspended`.
+
+* `scope` — LDAP search scope, shared for both above accounts.
+
+* `nuid` — a dictionary defining the range for numeric user IDs: `min` and `max`.
+
+* `message_on_create` — an optional message printed when a user account has been created. Using YAML indented delimiting is recommended for readability. Note that YAML discards the first indented empty string, so use two indented empty strings when you want an empty line printed.
+
+* `objectclass` — a list of LDAP object classes implied in account search and creation.
+
+* `attr` — a dictionary defining the actual attribute names in your directory and templates for new accounts.
+
+#### Dictionary `attr`
+
+* `uid`, `nuid`, `passwd` — attribute names for user ID, numeric user ID, and user password, respectively.
+
+* `templates` — an optional dictionary, where keys are attribute names, and values are Python formatting strings (or lists thereof), that can refer to other attributes. Be sure to quote the values if they start with a brace, because braces are special in YAML. Don't cause infinite recursion by defining attributes using each other.
+
+* `modify` — an optional dictionary, where keys are attribute names, and values are Python string functions. Functions get applied to default attribute values after formatting, but before confirming with the user. Permitted functions are: capitalize, casefold, lower, swapcase, title, upper.
