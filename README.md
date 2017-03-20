@@ -87,6 +87,10 @@ Numeric user IDs can not be generated sequentially, because that would require s
 
 After the default values are determined or generated, the user will be prompted to accept, delete, or change them. Entering empty value will accept default, and entering a dot (.) will ignore the attribute. Multiple values can be separated using a semicolon (;).
 
+After the account has been created, a message defined as `message_on_create` in the configuration file may be printed to standard output. Since attribute prompts are printed on standard error, you can easily feed the output to another program, e.g. send a welcome message with an email client:
+
+	kmail --composer --body "$(ldadm user add)"
+
 ### Renaming a user
 
 	ldadm user rename OLD_NAME NEW_NAME
