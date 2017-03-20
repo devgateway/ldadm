@@ -1,0 +1,48 @@
+---
+ldap:
+  uri: ldaps://ldap.example.org
+  binddn: cn=admin,dc=example,dc=org
+  bindpw: qwerty
+  paged_search_size: 256
+user:
+  base:
+    active: ou=people,dc=example,dc=org
+    suspended: ou=suspended,dc=example,dc=org
+  scope: one
+  nuid:
+    min: 1000
+    max: 60000
+  attr:
+    uid: uid
+    nuid: uidNumber
+    passwd: userPassword
+    templates:
+      displayName: "{givenName} {surname}"
+      uid: "{givenName:.1s}{surname}"
+      cn: "{uid}"
+      gidNumber: 1000
+      mail:
+        - "{uid}@example.org"
+        - "{uid}@mail.example.net"
+      homeDirectory: "/home/{uid}"
+    modify:
+      uid: casefold
+  message_on_create: >
+    Hello {givenName},
+    
+    
+    You have a new account at Wernham Hogg, Inc.
+    
+    
+    Username: {uid}
+    
+    Default password: {userPassword}
+    
+    
+    This is an automatic message, please do not reply.
+  objectclass:
+    - inetOrgPerson
+    - posixAccount
+    - shadowAccount
+    - inetLocalMailRecipient
+    - ldapPublicKey
