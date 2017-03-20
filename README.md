@@ -75,7 +75,7 @@ Create a new user account. Necessary attributes will be requested from user inpu
 
 * and the ones required by this program.
 
-Templates may be defined in the configuration file. They use [Python format string syntax](https://docs.python.org/3/library/string.html#formatstrings), and can be single values or lists. Templates may use other templates (single values only, not lists), and will be interpolated recursively. You are responsible for avoiding recursive loops in that case. After interpolation, the values may additionally undergo one string modification each. Modifications are [Python string methods](https://docs.python.org/3/library/stdtypes.html#string-methods), and the permitted modifications are: capitalize, casefold, lower, swapcase, title, upper.
+Templates may be defined in the configuration file. They use [Python format string syntax](https://docs.python.org/3/library/string.html#formatstrings), and can be single values or lists. Templates may use other templates (single values only, not lists), and will be interpolated recursively. You are responsible for avoiding recursive loops in that case. After interpolation, the values may additionally undergo one string modification each. Modifications are [Python string methods](https://docs.python.org/3/library/stdtypes.html#string-methods), and the permitted ones are: capitalize, casefold, lower, swapcase, title, upper.
 
 If `--defaults` argument is used, default attribute values are read from that user. However, templates will have precedence over those defaults.
 
@@ -83,7 +83,7 @@ The attributes required by this program are: user ID, numeric user ID, and passw
 
 Default passwords will be generated randomly using secure **secrets** module if available (Python 3.6+), or using insecure **random** module. In the latter case, a warning will be issued.
 
-Numeric user IDs can not be generated sequentially, because that would require storing the maximum used value somewhere, and LDAP does not provide this capability without customization. Therefore, this program generates random numeric user IDs from the range defined in the configuration file. Currently, newer Debian and RedHat based systems safely allow numeric UID between 1000 and 60000. This program will detect and avoid numeric UID collisions.
+Numeric user IDs can not be generated sequentially, because that would require storing the maximum used value somewhere, and LDAP does not provide this capability without customization. Therefore, this program generates random numeric user IDs from the range defined in the configuration file. Currently, newer Debian and RedHat based systems safely allow numeric UID between 1000 and 60000. This program will detect and avoid UID and numeric UID collisions.
 
 After the default values are determined or generated, the user will be prompted to accept, delete, or change them. Entering empty value will accept default, and entering a dot (.) will ignore the attribute. Multiple values can be separated using a semicolon (;).
 
@@ -93,20 +93,20 @@ After the default values are determined or generated, the user will be prompted 
 
 Modify user RDN (relative distinguished name). LDAP server must keep the object unique ID. Only the attribute comprising the RDN will be changed, but not other attributes (such as canonical name, cn).
 
-### List user's SSH public keys
+### Listing user's SSH public keys
 
 	ldadm user key list USER_NAME
 
 List MD5 hashes and comments (if present) for the user's SSH public keys. Unsupported and invalid keys will be printed as a placeholder, but will not result in an error. Missing public key attribute will not cause an error either.
 
-### List user's SSH public keys
+### Deleting SSH public keys from a user
 
 	ldadm user key delete USER_NAME KEY_NAME…
 
-Delete public keys from a user by MD5 hash or comment. MD5 prefix and separators are ignored, only 16 hex digits are used. If those are not found, the argument is considered the comment part of the key.
+Delete public keys from the user by MD5 hash or comment. MD5 prefix and separators are ignored, only 16 hex digits are used. If those are not found, the argument is considered the comment part of the key.
 
-### List user's SSH public keys
+### Adding SSH public keys to a user
 
 	ldadm user key add [{-f|--file} FILE_NAME] USER_NAME
 
-Add public keys to user, reading one key per line from the given file, or standard input. Only single-line keys (OpenSSH format) are supported, not PEM-encoded PKCS#1 ones.
+Add public keys to the user, reading one key per line from the given file, or standard input. Only single-line keys (OpenSSH format) are supported, not PEM-encoded PKCS#1 ones.
