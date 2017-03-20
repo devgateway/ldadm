@@ -1,5 +1,6 @@
 from functools import reduce
 from datetime import datetime
+import sys
 
 def pretty_print(entry):
     def output(k, v):
@@ -32,6 +33,8 @@ def pretty_print(entry):
 
     print()
 
-def input_attributes(object_def, template):
-    attrs = {}
-    print("'Enter' = default value, '.' = delete value")
+def input_stderr(prompt = None):
+    if prompt:
+        sys.stderr.write(prompt)
+        sys.stderr.flush()
+    return sys.stdin.readline()[:-1]

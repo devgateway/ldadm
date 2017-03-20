@@ -10,7 +10,7 @@ from ldap3.core.exceptions import LDAPKeyError, LDAPAttributeOrValueExistsResult
 from sshpubkeys import SSHKey, InvalidKeyError
 
 from .config import Config
-from .console import pretty_print, input_attributes
+from .console import pretty_print
 from .objects import User
 
 log = logging.getLogger(__name__)

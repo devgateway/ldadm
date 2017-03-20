@@ -7,6 +7,7 @@ except ImportError:
 from ldap3.utils.ciDict import CaseInsensitiveWithAliasDict
 
 from .config import ConfigAttrError
+from .console import input_stderr
 
 log = logging.getLogger(__name__)
 
@@ -186,7 +187,7 @@ class User:
         else:
             prompt = "%s: " % key
 
-        response = input(prompt)
+        response = input_stderr(prompt)
 
         if response == ".":
             pass # dot entered, delete this attribute
@@ -198,7 +199,7 @@ class User:
                 # require input from user
                 while not response:
                     log.error("%s requires a value" % key)
-                    response = input(prompt)
+                    response = input_stderr(prompt)
                 self.attrs[names] = response
         else:
             # try to split string into a list
