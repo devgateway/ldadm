@@ -7,7 +7,7 @@ import ldap3
 from ldap3 import Connection, ObjectDef, Reader, Writer
 from ldap3.utils.dn import escape_attribute_value, safe_dn
 from ldap3.core.exceptions import LDAPKeyError, LDAPAttributeOrValueExistsResult
-from sshpubkeys import SSHKey, InvalidKeyError
+from sshpubkeys import SSHKey, InvalidKeyException
 
 from .config import Config
 from .console import pretty_print

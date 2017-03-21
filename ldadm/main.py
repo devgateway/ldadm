@@ -165,7 +165,7 @@ def main():
     logging.debug("Invoking %s.%s" % (args.class_name, args.method_name))
 
     try:
-        commands = importlib.import_module(".commands")
+        commands = importlib.import_module(".commands", "ldadm")
         command_instance = getattr(commands, args.class_name)(args)
         handler = getattr(command_instance, args.method_name)
         handler()
