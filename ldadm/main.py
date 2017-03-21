@@ -157,15 +157,19 @@ args = ap.parse_args()
 log_level = log_levels[args.log_level]
 logging.basicConfig(level = log_level)
 
-logging.debug("Invoking %s.%s" % (args.class_name, args.method_name))
+def main():
+    logging.debug("Invoking %s.%s" % (args.class_name, args.method_name))
 
-try:
-    commands = importlib.import_module("directory.commands")
-    command_instance = getattr(commands, args.class_name)(args)
-    handler = getattr(command_instance, args.method_name)
-    handler()
-except Exception as e:
-    if log_level == logging.DEBUG:
-        raise RuntimeError("Daisy… Daisy…") from e
-    else:
-        sys.exit(str(e))
+    try:
+        commands = importlib.import_module(".commands")
+        command_instance = getattr(commands, args.class_name)(args)
+        handler = getattr(command_instance, args.method_name)
+        handler()
+    except Exception as e:
+        if log_level == logging.DEBUG:
+            raise RuntimeError("Daisy… Daisy…") from e
+        else:
+            sys.exit(str(e))
+
+if __name__ == "__main__":
+    main()
