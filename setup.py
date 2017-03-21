@@ -3,6 +3,7 @@ from setuptools import setup
 setup(
         name = "ldadm",
         version = "1.0",
+        license = "GPLv3+",
         description = "Manage LDAP accounts",
         author = "Development Gateway",
         python_requires = ">= 3.4",

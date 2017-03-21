@@ -132,7 +132,7 @@ p.set_defaults(method_name = "add_key")
 p.add_argument("-f", "--file",
         dest = "key_file",
         metavar = "FILE_NAME",
-        type = argparse.FileType('r'),
+        type = argparse.FileType("r"),
         nargs = 1,
         help = "Read public key from file")
 
