@@ -21,11 +21,15 @@ ap.add_argument("--loglevel",
         choices = log_levels.keys(),
         help = "Set logging verbosity")
 
-modes = ap.add_subparsers(title = "Objects to manage")
+subcommands = ap.add_subparsers(
+        description = "Objects to manage",
+        dest = "subcommand"
+        )
+subcommands.required = True
 
 # User commands
 
-user_parser = modes.add_parser("user",
+user_parser = subcommands.add_parser("user",
         help = "User accounts")
 user_parser.set_defaults(class_name = "UserCommand")
 
@@ -148,7 +152,7 @@ p.add_argument("key_names",
 
 # List commands
 
-list_parser = modes.add_parser("list",
+list_parser = subcommands.add_parser("list",
         help = "Mailing lists")
 list_parser.set_defaults(class_name = "ListCommand")
 
