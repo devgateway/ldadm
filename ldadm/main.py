@@ -1,8 +1,5 @@
 #!/usr/bin/python3
-import argparse
-import logging
-import sys
-import importlib
+import argparse, logging, sys, importlib
 
 log_levels = {
     "CRITICAL": logging.CRITICAL,

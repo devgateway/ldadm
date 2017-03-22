@@ -1,6 +1,4 @@
-import logging
-import os
-import copy
+import logging, os, copy
 
 import yaml
 

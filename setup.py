@@ -9,6 +9,7 @@ setup(
         python_requires = ">= 3.4",
         packages = ["ldadm"],
         install_requires = [
+            "PyYAML",
             "ldap3 >= 2.2.2",
             "sshpubkeys >= 2.2.0"
             ],

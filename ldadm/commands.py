@@ -1,7 +1,4 @@
-import logging
-import sys
-import random
-import re
+import logging, sys, random, re
 
 import ldap3
 from ldap3 import Connection, ObjectDef, Reader, Writer
@@ -407,7 +404,7 @@ class UserCommand(Command):
             keys = user[pubkey_attr]
 
             # compare each key hash with that dict, then delete matching
-            for key in user[pubkey_attr].values:
+            for key in keys.values:
                 if type(key) is bytes:
                     key_string = key.decode("utf-8")
                 elif type(key) is str:
