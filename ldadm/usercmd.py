@@ -95,7 +95,12 @@ class UserCommand(Command):
         else:
             base = self._cfg.user.base.suspended
 
-        reader = self._get_reader(base, query)
+        reader = Reader(
+                connection = self._conn,
+                base = base,
+                query = query,
+                object_def = self.__user,
+                sub_tree = True)
         reader.get_operational_attributes = operational
         return reader.search_paged(
                 paged_size = self._cfg.ldap.paged_search_size,
@@ -151,24 +156,16 @@ class UserCommand(Command):
 
         self.__assert_empty(usernames)
 
-    def _get_reader(self, base, query):
-        if self._cfg.user.scope.lower() == "one":
-            sub_tree = False
-        else:
-            sub_tree = True
-
-        return Reader(
-                connection = self._conn,
-                base = base,
-                query = query,
-                object_def = self.__user,
-                sub_tree = sub_tree)
-
     def _get_writer(self, base, query, attrs = None):
         if not attrs:
             attrs = self._cfg.user.attr.uid
 
-        reader = self._get_reader(base, query)
+        reader = Reader(
+                connection = self._conn,
+                base = base,
+                query = query,
+                object_def = self.__user,
+                sub_tree = True)
         reader.search(attrs)
         return Writer.from_cursor(reader)
 
@@ -195,7 +192,12 @@ class UserCommand(Command):
         # Get default values from a reference object
         if self._args.defaults:
             query = "%s: %s" % (uid_attr_name, self._args.defaults)
-            reader = self._get_reader(base, query)
+            reader = Reader(
+                    connection = self._conn,
+                    base = base,
+                    query = query,
+                    object_def = self.__user,
+                    sub_tree = True)
             if not reader.search(ALL_ATTRIBUTES):
                 raise RuntimeError("User %s not found" % self._args.defaults[0])
             source_obj = reader.entries[0]
@@ -241,7 +243,12 @@ class UserCommand(Command):
         base = self._cfg.user.base.active
         query = "%s: %s" % (self._cfg.user.attr.uid, username)
 
-        reader = self._get_reader(base, query)
+        reader = Reader(
+                connection = self._conn,
+                base = base,
+                query = query,
+                object_def = self.__user,
+                sub_tree = True)
         if not reader.search(pubkey_attr):
             raise RuntimeError("User %s not found" % username)
 

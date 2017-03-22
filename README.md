@@ -141,8 +141,6 @@ Contains settings and templates for user account objects.
 
 * `base` — a dictionary with LDAP search bases for user accounts: `active` and `suspended`.
 
-* `scope` — LDAP search scope, shared for both above accounts.
-
 * `nuid` — a dictionary defining the range for numeric user IDs: `min` and `max`.
 
 * `message_on_create` — an optional message printed when a user account has been created. Using YAML indented delimiting is recommended for readability. Note that YAML discards the first indented empty string, so use two indented empty strings when you want an empty line printed.

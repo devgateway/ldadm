@@ -8,7 +8,6 @@ user:
   base:
     active: ou=people,dc=example,dc=org
     suspended: ou=suspended,dc=example,dc=org
-  scope: one
   nuid:
     min: 1000
     max: 60000
