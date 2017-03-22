@@ -29,6 +29,7 @@ subcommands.required = True
 user_parser = subcommands.add_parser("user",
         help = "User accounts")
 user_parser.set_defaults(class_name = "UserCommand")
+user_parser.set_defaults(module_name = "usercmd")
 
 user = user_parser.add_subparsers(title = "User command")
 
@@ -152,6 +153,7 @@ p.add_argument("key_names",
 list_parser = subcommands.add_parser("list",
         help = "Mailing lists")
 list_parser.set_defaults(class_name = "ListCommand")
+list_parser.set_defaults(module_name = "listcmd")
 
 args = ap.parse_args()
 
@@ -162,7 +164,8 @@ def main():
     logging.debug("Invoking %s.%s" % (args.class_name, args.method_name))
 
     try:
-        commands = importlib.import_module(".commands", "ldadm")
+        module_name = "." + args.module_name
+        commands = importlib.import_module(module_name, "ldadm")
         command_instance = getattr(commands, args.class_name)(args)
         handler = getattr(command_instance, args.method_name)
         handler()
