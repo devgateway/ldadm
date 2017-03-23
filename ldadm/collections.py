@@ -5,6 +5,9 @@ except(ImportError):
     from collections import MutableMapping
 
 from ldap3.utils.dn import escape_attribute_value, safe_dn
+from ldap3 import ALL_ATTRIBUTES, ObjectDef, Reader, Writer
+
+from .config import Config
 
 log = logging.getLogger(__name__)
 
@@ -49,7 +52,7 @@ class LdapObjectMapping(MutableMapping):
     def _get_reader(self, query = None):
         return Reader(
                 connection = self._conn,
-                base = base,
+                base = self._base,
                 query = query,
                 object_def = self._object_def,
                 sub_tree = True)
@@ -158,4 +161,4 @@ class LdapObjectMapping(MutableMapping):
         raise NotImplementedError
 
 class UserMapping(LdapObjectMapping):
-    _attribute = cfg.user.attr.uid
+    _attribute = cfg.uid

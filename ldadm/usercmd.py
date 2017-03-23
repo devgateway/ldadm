@@ -9,6 +9,7 @@ from sshpubkeys import SSHKey, InvalidKeyException
 from .console import pretty_print
 from .objects import User
 from .command import Command
+from .collections import UserMapping
 
 log = logging.getLogger(__name__)
 
@@ -107,9 +108,13 @@ class UserCommand(Command):
                 attributes = attrs)
 
     def list_users(self):
-        attrs = self._cfg.user.attr.uid
-        for user in self._search(attrs, active = not self._args.suspended):
-            print(user[self._cfg.user.attr.uid])
+        users = UserMapping(
+                connection = self._conn,
+                base = self._cfg.user.base.active,
+                object_def = self.__user,
+                attrs = None)
+        for uid in users.keys():
+            print(uid)
 
     def search(self):
         query = self._args.filter
