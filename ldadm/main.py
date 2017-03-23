@@ -148,6 +148,19 @@ p.add_argument("key_names",
         nargs = "*",
         help = "Public key MD5 modulus or comment")
 
+# Unit commands
+
+unit_parser = subcommands.add_parser("unit",
+        help = "Organizational units")
+unit_parser.set_defaults(class_name = "UnitCommand")
+unit_parser.set_defaults(module_name = "unitcmd")
+
+unit = unit_parser.add_subparsers(title = "Unit command")
+
+p = unit.add_parser("list",
+        help = "List all units")
+p.set_defaults(method_name = "list_units")
+
 # List commands
 
 list_parser = subcommands.add_parser("list",
