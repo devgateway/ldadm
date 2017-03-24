@@ -49,6 +49,8 @@ class LdapObjectMapping(MutableMapping):
         return "+".join( map(lambda key_val: "%s=%s" % key_val, new_rdn) )
 
     def _get_reader(self, query = None):
+        if not query:
+            query = self._query
         return Reader(
                 connection = self._conn,
                 base = self._base,
