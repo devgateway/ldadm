@@ -32,18 +32,19 @@ class LdapObjectMapping(MutableMapping):
         self.__queue = []
 
         if not limit:
-            self._default_query = None
+            self._default_query = ""
         elif type(limit) is str:
             self._default_query = limit
         else:
             try:
-                self._default_query = self._build_query(ids)
+                self._default_query = self.__class__._build_query(limit)
+                self.__queue = list(limit)
             except TypeError as err:
                 raise TypeError("limit must be a string or list of IDs") from err
 
-    @staticmethod
-    def _build_query(ids):
-        return "%s: %s" % ( __class__._attribute, ";".join(list(ids)) )
+    @classmethod
+    def _build_query(cls, ids):
+        return "%s: %s" % ( cls._attribute, ";".join(list(ids)) )
 
     @staticmethod
     def _make_rdn(entry, new_val):
@@ -62,7 +63,8 @@ class LdapObjectMapping(MutableMapping):
 
     def _get_reader(self, ids = None):
         if ids:
-            query = self._build_query(ids)
+            query = self.__class__._build_query(ids)
+            self.__queue = list(ids)
         else:
             query = self._default_query
 
@@ -89,16 +91,25 @@ class LdapObjectMapping(MutableMapping):
         return self._getitem(id, attrs = None)["dn"]
 
     def __iter__(self):
-        for value in self.values():
-            yield value
+        return self.values()
 
     def values(self):
+        attr = self.__class__._attribute
         reader = self._get_reader()
         results = reader.search_paged(
                 paged_size = cfg.ldap.paged_search_size,
                 attributes = self._attrs)
         for entry in results:
+            id = entry[attr].value
+            try:
+                self.__queue.remove(id)
+            except ValueError:
+                pass
+
             yield entry
+
+        if self.__queue:
+            raise MissingObjects(self.__queue)
 
     def keys(self):
         attr = self.__class__._attribute
@@ -107,7 +118,15 @@ class LdapObjectMapping(MutableMapping):
                 paged_size = cfg.ldap.paged_search_size,
                 attributes = attr)
         for entry in results:
-            yield entry[attr].value
+            id = entry[attr].value
+            try:
+                self.__queue.remove(id)
+            except ValueError:
+                pass
+            yield id
+
+        if self.__queue:
+            raise MissingObjects(self.__queue)
 
     def __contains__(self, id):
         raise NotImplementedError
