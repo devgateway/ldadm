@@ -7,7 +7,7 @@ except(ImportError):
 from ldap3.utils.dn import escape_attribute_value, safe_dn
 from ldap3 import ALL_ATTRIBUTES, ObjectDef, Reader, Writer
 
-from .config import Config
+from .config import cfg
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +31,6 @@ class LdapObjectMapping(MutableMapping):
         self._reader = None
         self._query = query
         self._object_def = object_def
-        self._ldap_cfg = Config().ldap
         self.__queue = []
 
     @staticmethod
@@ -79,7 +78,7 @@ class LdapObjectMapping(MutableMapping):
         attr = self.__class__._attribute
         reader = self._get_reader()
         results = reader.search_paged(
-                paged_size = self._ldap_cfg.paged_search_size,
+                paged_size = cfg.ldap.paged_search_size,
                 attributes = self._attrs)
         for entry in results:
             yield entry
@@ -88,7 +87,7 @@ class LdapObjectMapping(MutableMapping):
         attr = self.__class__._attribute
         reader = self._get_reader()
         results = reader.search_paged(
-                paged_size = self._ldap_cfg.paged_search_size,
+                paged_size = cfg.ldap.paged_search_size,
                 attributes = attr)
         for entry in results:
             yield entry[attr].value
@@ -161,4 +160,4 @@ class LdapObjectMapping(MutableMapping):
         raise NotImplementedError
 
 class UserMapping(LdapObjectMapping):
-    _attribute = cfg.uid
+    _attribute = cfg.user.attr.uid

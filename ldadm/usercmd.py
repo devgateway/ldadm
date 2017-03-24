@@ -10,6 +10,7 @@ from .console import pretty_print
 from .objects import User
 from .command import Command
 from .collections import UserMapping
+from .config import cfg
 
 log = logging.getLogger(__name__)
 
@@ -17,13 +18,13 @@ class UserCommand(Command):
     def __init__(self, args):
         super().__init__(args)
         self.__user = ObjectDef(
-                object_class = self._cfg.user.objectclass,
+                object_class = cfg.user.objectclass,
                 schema = self._conn)
 
     def _get_unique_id_number(self, *args_ignored):
-        umin = self._cfg.user.nuid.min
-        umax = self._cfg.user.nuid.max
-        attr_name = self._cfg.user.attr.nuid
+        umin = cfg.user.nuid.min
+        umax = cfg.user.nuid.max
+        attr_name = cfg.user.attr.nuid
 
         n = 50 # candidates for the unique UID
         candidates = set( random.randint(umin, umax) for i in range(n) )
@@ -50,7 +51,7 @@ class UserCommand(Command):
     def _uid_unique(self, uid):
         # raise an exception if UID is not unique
         for active in (True, False):
-            query = "%s: %s" % (self._cfg.user.attr.uid, uid)
+            query = "%s: %s" % (cfg.user.attr.uid, uid)
             users = self._search(
                     attrs = None,
                     query = query,
@@ -71,18 +72,18 @@ class UserCommand(Command):
 
     def _set_active(self, usernames, active = True):
         if active:
-            base_from = self._cfg.user.base.suspended
-            base_to = self._cfg.user.base.active
+            base_from = cfg.user.base.suspended
+            base_to = cfg.user.base.active
         else:
-            base_from = self._cfg.user.base.active
-            base_to = self._cfg.user.base.suspended
+            base_from = cfg.user.base.active
+            base_to = cfg.user.base.suspended
 
-        query = "%s: %s" % ( self._cfg.user.attr.uid, ";".join(usernames) )
+        query = "%s: %s" % ( cfg.user.attr.uid, ";".join(usernames) )
 
         users = self._get_writer(base_from, query)
 
         for user in users:
-            uid = user[self._cfg.user.attr.uid].value
+            uid = user[cfg.user.attr.uid].value
             user.entry_move(base_to)
             usernames.remove(uid)
 
@@ -92,9 +93,9 @@ class UserCommand(Command):
 
     def _search(self, attrs = None, query = None, active = True, operational = False):
         if active:
-            base = self._cfg.user.base.active
+            base = cfg.user.base.active
         else:
-            base = self._cfg.user.base.suspended
+            base = cfg.user.base.suspended
 
         reader = Reader(
                 connection = self._conn,
@@ -104,13 +105,13 @@ class UserCommand(Command):
                 sub_tree = True)
         reader.get_operational_attributes = operational
         return reader.search_paged(
-                paged_size = self._cfg.ldap.paged_search_size,
+                paged_size = cfg.ldap.paged_search_size,
                 attributes = attrs)
 
     def list_users(self):
         users = UserMapping(
                 connection = self._conn,
-                base = self._cfg.user.base.active,
+                base = cfg.user.base.active,
                 object_def = self.__user,
                 attrs = None)
         for uid in users.keys():
@@ -118,13 +119,13 @@ class UserCommand(Command):
 
     def search(self):
         query = self._args.filter
-        attrs = self._cfg.user.attr.uid
+        attrs = cfg.user.attr.uid
         for user in self._search(attrs, query, active = not self._args.suspended):
-            print(user[self._cfg.user.attr.uid])
+            print(user[cfg.user.attr.uid])
 
     def show(self):
         usernames = list(self._args_or_stdin("username"))
-        query = "%s: %s" % ( self._cfg.user.attr.uid, ";".join(usernames) )
+        query = "%s: %s" % ( cfg.user.attr.uid, ";".join(usernames) )
 
         users = self._search(
                 attrs = ALL_ATTRIBUTES,
@@ -133,7 +134,7 @@ class UserCommand(Command):
                 operational = self._args.full)
         for user in users:
             pretty_print(user)
-            uid = user[self._cfg.user.attr.uid].value
+            uid = user[cfg.user.attr.uid].value
             usernames.remove(uid)
 
         self.__assert_empty(usernames)
@@ -148,12 +149,12 @@ class UserCommand(Command):
 
     def delete(self):
         usernames = list(self._args_or_stdin("username"))
-        query = "%s: %s" % ( self._cfg.user.attr.uid, ";".join(usernames) )
+        query = "%s: %s" % ( cfg.user.attr.uid, ";".join(usernames) )
 
-        users = self._get_writer(self._cfg.user.base.suspended, query)
+        users = self._get_writer(cfg.user.base.suspended, query)
 
         for user in users:
-            uid = user[self._cfg.user.attr.uid].value
+            uid = user[cfg.user.attr.uid].value
             user.entry_delete()
             usernames.remove(uid)
 
@@ -163,7 +164,7 @@ class UserCommand(Command):
 
     def _get_writer(self, base, query, attrs = None):
         if not attrs:
-            attrs = self._cfg.user.attr.uid
+            attrs = cfg.user.attr.uid
 
         reader = Reader(
                 connection = self._conn,
@@ -175,14 +176,14 @@ class UserCommand(Command):
         return Writer.from_cursor(reader)
 
     def rename(self):
-        base = self._cfg.user.base.active
-        query = "%s: %s" % (self._cfg.user.attr.uid, self._args.oldname)
+        base = cfg.user.base.active
+        query = "%s: %s" % (cfg.user.attr.uid, self._args.oldname)
 
         user = self._get_writer(base, query).entries[0]
         try:
             rdn = self._get_new_rdn(
                     entry = user,
-                    attr_name = self._cfg.user.attr.uid,
+                    attr_name = cfg.user.attr.uid,
                     new_val = self._args.newname)
             user.entry_rename(rdn)
             user.entry_commit_changes(refresh = False)
@@ -191,8 +192,8 @@ class UserCommand(Command):
             raise RuntimeError(msg) from err
 
     def add(self):
-        uid_attr_name = self._cfg.user.attr.uid
-        base = self._cfg.user.base.active
+        uid_attr_name = cfg.user.attr.uid
+        base = cfg.user.base.active
 
         # Get default values from a reference object
         if self._args.defaults:
@@ -210,14 +211,14 @@ class UserCommand(Command):
             source_obj = None
 
         handlers = {
-                self._cfg.user.attr.nuid: self._get_unique_id_number,
-                self._cfg.user.attr.uid: self._uid_unique,
-                self._cfg.user.attr.passwd: User.make_password
+                cfg.user.attr.nuid: self._get_unique_id_number,
+                cfg.user.attr.uid: self._uid_unique,
+                cfg.user.attr.passwd: User.make_password
                 }
 
         User.object_def = self.__user
         user = User(
-                config_node = self._cfg.user,
+                config_node = cfg.user,
                 reference_object = source_obj,
                 handlers = handlers
                 )
@@ -244,9 +245,9 @@ class UserCommand(Command):
             print(user.message)
 
     def _get_keys(self, username):
-        pubkey_attr = self._cfg.user.attr.pubkey
-        base = self._cfg.user.base.active
-        query = "%s: %s" % (self._cfg.user.attr.uid, username)
+        pubkey_attr = cfg.user.attr.pubkey
+        base = cfg.user.base.active
+        query = "%s: %s" % (cfg.user.attr.uid, username)
 
         reader = Reader(
                 connection = self._conn,
@@ -296,9 +297,9 @@ class UserCommand(Command):
         username = self._args.username
 
         # get the writable entry
-        pubkey_attr = self._cfg.user.attr.pubkey
-        base = self._cfg.user.base.active
-        query = "%s: %s" % (self._cfg.user.attr.uid, username)
+        pubkey_attr = cfg.user.attr.pubkey
+        base = cfg.user.base.active
+        query = "%s: %s" % (cfg.user.attr.uid, username)
 
         try:
             writer = self._get_writer(base, query, attrs = pubkey_attr)
@@ -345,9 +346,9 @@ class UserCommand(Command):
                 keys_to_delete[val] = val
 
         # get the writable entry
-        pubkey_attr = self._cfg.user.attr.pubkey
-        base = self._cfg.user.base.active
-        query = "%s: %s" % (self._cfg.user.attr.uid, username)
+        pubkey_attr = cfg.user.attr.pubkey
+        base = cfg.user.base.active
+        query = "%s: %s" % (cfg.user.attr.uid, username)
 
         try:
             writer = self._get_writer(base, query, attrs = pubkey_attr)

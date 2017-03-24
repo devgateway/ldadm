@@ -5,20 +5,19 @@ from ldap3 import Connection
 from ldap3.utils.dn import safe_rdn
 from ldap3.utils.log import set_library_log_detail_level, PROTOCOL
 
-from .config import Config
+from .config import cfg
 
 log = logging.getLogger(__name__)
 
 class Command:
     def __init__(self, args):
         self._args = args
-        self._cfg = Config()
         self._conn = self._connect()
 
     def _connect(self):
         try:
-            binddn = self._cfg.ldap.binddn
-            bindpw = self._cfg.ldap.bindpw
+            binddn = cfg.ldap.binddn
+            bindpw = cfg.ldap.bindpw
         except AttributeError:
             binddn = None
             bindpw = None
@@ -27,7 +26,7 @@ class Command:
             set_library_log_detail_level(PROTOCOL)
 
         conn = Connection(
-                server = self._cfg.ldap.uri,
+                server = cfg.ldap.uri,
                 user = binddn,
                 password = bindpw,
                 raise_exceptions = True)
