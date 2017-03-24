@@ -21,17 +21,29 @@ class MissingObjects(Exception):
 class LdapObjectMapping(MutableMapping):
     _attribute = None
 
-    def __init__(self, connection, base, object_def, attrs, query = None):
+    def __init__(self, connection, base, object_def, limit = None, attrs = None):
         if not self.__class__._attribute:
             raise ValueError("Primary attribute must be defined")
 
         self._conn = connection
         self._base = base
         self._attrs = attrs
-        self._reader = None
-        self._query = query
         self._object_def = object_def
         self.__queue = []
+
+        if not limit:
+            self._default_query = None
+        elif type(limit) is str:
+            self._default_query = limit
+        else:
+            try:
+                self._default_query = self._build_query(ids)
+            except TypeError as err:
+                raise TypeError("limit must be a string or list of IDs") from err
+
+    @staticmethod
+    def _build_query(ids):
+        return "%s: %s" % ( __class__._attribute, ";".join(list(ids)) )
 
     @staticmethod
     def _make_rdn(entry, new_val):
@@ -48,9 +60,12 @@ class LdapObjectMapping(MutableMapping):
 
         return "+".join( map(lambda key_val: "%s=%s" % key_val, new_rdn) )
 
-    def _get_reader(self, query = None):
-        if not query:
-            query = self._query
+    def _get_reader(self, ids = None):
+        if ids:
+            query = self._build_query(ids)
+        else:
+            query = self._default_query
+
         return Reader(
                 connection = self._conn,
                 base = self._base,
@@ -58,8 +73,9 @@ class LdapObjectMapping(MutableMapping):
                 object_def = self._object_def,
                 sub_tree = True)
 
-    def _get_writer(self, query = None, attrs = None):
-        reader = self._get_reader(query)
+    def _get_writer(self, ids = None):
+        attrs = self.__class__._attribute
+        reader = self._get_reader(ids)
         reader.search(attrs)
         return Writer.from_cursor(reader)
 
@@ -77,7 +93,6 @@ class LdapObjectMapping(MutableMapping):
             yield value
 
     def values(self):
-        attr = self.__class__._attribute
         reader = self._get_reader()
         results = reader.search_paged(
                 paged_size = cfg.ldap.paged_search_size,
@@ -102,10 +117,8 @@ class LdapObjectMapping(MutableMapping):
 
     def __setitem__(self, id, attrs):
         # Create a new virtual object
-        attr = self.__class__._attribute
+        writer = self._get_writer([id])
         dn = self._make_dn(attrs)
-        query = "%s: %s" % (attr, id)
-        writer = self._get_writer(query = query)
         entry = writer.new(dn)
 
         # Set object properties from ciDict
@@ -120,8 +133,7 @@ class LdapObjectMapping(MutableMapping):
 
     def commit_delete(self):
         attr = self.__class__._attribute
-        query = attr + ": " + ";".join(self.__queue)
-        writer = self._get_writer(query = query, attrs = attr)
+        writer = self._get_writer(self.__queue)
 
         for entry in writer:
             key = entry[attr].value
@@ -133,26 +145,16 @@ class LdapObjectMapping(MutableMapping):
         if self.__queue:
             raise MissingObjects(self.__queue)
 
-    def move(self, ids, dest):
-        attr = self.__class__._attribute
-        base_to = dest._base
-        query = attr + ": " + ";".join(ids)
+    def move_all(self, dest):
+        writer = self._get_writer()
 
-        writer = self._get_writer(query = query, attrs = attr)
         for entry in writer:
-            key = entry[attr].value
-            entry.entry_move(base_to)
-            ids.remove(key)
+            entry.entry_move(dest._base)
 
         writer.commit(refresh = False)
 
-        if ids:
-            raise MissingObjects(ids)
-
     def rename(self, id, new_id):
-        attr = self.__class__._attribute
-        query = "%s: %s" % (attr, id)
-        writer = self._get_writer(query = query)
+        writer = self._get_writer([id])
         entry = writer.entries[0]
         rdn = self._make_rdn(entry, new_id)
         writer.entry_rename(rdn)
