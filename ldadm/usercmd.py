@@ -126,15 +126,20 @@ class UserCommand(Command):
     def show(self):
         usernames = list(self._args_or_stdin("username"))
         query = "%s: %s" % ( cfg.user.attr.uid, ";".join(usernames) )
+        if self._args.suspended:
+            base = cfg.user.base.suspended
+        else:
+            base = cfg.user.base.active
 
-        users = self._search(
-                attrs = ALL_ATTRIBUTES,
+        users = UserMapping(
+                connection = self._conn,
+                base = base,
                 query = query,
-                active = not self._args.suspended,
-                operational = self._args.full)
-        for user in users:
-            pretty_print(user)
-            uid = user[cfg.user.attr.uid].value
+                object_def = self.__user,
+                attrs = ALL_ATTRIBUTES) # TODO: operational attributes
+        for user_entry in users:
+            pretty_print(user_entry)
+            uid = user_entry[cfg.user.attr.uid].value
             usernames.remove(uid)
 
         self.__assert_empty(usernames)
