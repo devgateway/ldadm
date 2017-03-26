@@ -190,16 +190,7 @@ class UserCommand(Command):
 
         # Get default values from a reference object
         if self._args.defaults:
-            query = "%s: %s" % (uid_attr_name, self._args.defaults)
-            reader = Reader(
-                    connection = self._conn,
-                    base = base,
-                    query = query,
-                    object_def = self.__user,
-                    sub_tree = True)
-            if not reader.search(ALL_ATTRIBUTES):
-                raise RuntimeError("User %s not found" % self._args.defaults[0])
-            source_obj = reader.entries[0]
+            source_obj = self._get_user(self._args.defaults, ALL_ATTRIBUTES)
         else:
             source_obj = None
 
@@ -230,21 +221,24 @@ class UserCommand(Command):
         if user.message:
             print(user.message)
 
-    def _get_keys(self, username):
-        pubkey_attr = cfg.user.attr.pubkey
-
+    def _get_user(self, username, attrs = None):
         users = UserMapping(
                 connection = self._conn,
                 base = cfg.user.base.active,
                 limit = [username],
                 object_def = self.__user,
-                attrs = pubkey_attr)
+                attrs = attrs)
 
         user_list = [u for u in users]
         try:
-            user = user_list[0]
-        except KeyError as e:
-            raise RuntimeError("User %s not found" % username) from e
+            return user_list[0]
+        except KeyError as err:
+            raise RuntimeError("User %s not found" % username) from err
+
+    def _get_keys(self, username):
+        pubkey_attr = cfg.user.attr.pubkey
+
+        user = _get_user(username, pubkey_attr)
 
         try:
             keys = user[pubkey_attr]

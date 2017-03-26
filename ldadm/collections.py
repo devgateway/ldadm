@@ -97,8 +97,9 @@ class LdapObjectMapping(MutableMapping):
         elif type(self._attrs) is not list:
             requested_attrs = [self._attrs]
 
-        if attr not in requested_attrs:
-            requested_attrs.append(attr)
+        if type(requested_attrs) is list:
+            if attr not in requested_attrs:
+                requested_attrs.append(attr)
 
         reader = self._get_reader()
         results = reader.search_paged(
