@@ -178,16 +178,13 @@ class UserCommand(Command):
 
     def rename(self):
         base = cfg.user.base.active
-        query = "%s: %s" % (cfg.user.attr.uid, self._args.oldname)
 
-        user = self._get_writer(base, query).entries[0]
+        users = UserMapping(
+                connection = self._conn,
+                base = base,
+                object_def = self.__user)
         try:
-            rdn = self._get_new_rdn(
-                    entry = user,
-                    attr_name = cfg.user.attr.uid,
-                    new_val = self._args.newname)
-            user.entry_rename(rdn)
-            user.entry_commit_changes(refresh = False)
+            users.rename(self._args.oldname, self._args.newname)
         except LDAPEntryAlreadyExistsResult as err:
             msg = "User '%s' already exists" % self._args.newname
             raise RuntimeError(msg) from err

@@ -4,7 +4,7 @@ try:
 except(ImportError):
     from collections import MutableMapping
 
-from ldap3.utils.dn import escape_attribute_value, safe_dn
+from ldap3.utils.dn import escape_attribute_value, safe_dn, safe_rdn
 from ldap3 import ALL_ATTRIBUTES, ObjectDef, Reader, Writer
 
 from .config import cfg
@@ -46,9 +46,9 @@ class LdapObjectMapping(MutableMapping):
     def _build_query(cls, ids):
         return "%s: %s" % ( cls._attribute, ";".join(list(ids)) )
 
-    @staticmethod
-    def _make_rdn(entry, new_val):
-        attr = __class__._attribute
+    @classmethod
+    def _make_rdn(cls, entry, new_val):
+        attr = cls._attribute
         # RDN can be an array: gn=John+sn=Doe
         old_rdn = safe_rdn(entry.entry_dn, decompose = True)
         new_rdn = []
@@ -156,7 +156,7 @@ class LdapObjectMapping(MutableMapping):
             entry.entry_delete()
             self.__queue.remove(key)
 
-        writer.commit()
+        writer.commit(refresh = False)
 
         if self.__queue:
             raise MissingObjects(self.__queue)
@@ -184,8 +184,8 @@ class LdapObjectMapping(MutableMapping):
         writer = self._get_writer([id])
         entry = writer.entries[0]
         rdn = self._make_rdn(entry, new_id)
-        writer.entry_rename(rdn)
-        writer.entry_commit_changes(refresh = False)
+        entry.entry_rename(rdn)
+        writer.commit(refresh = False)
 
     def __len__(self):
         raise NotImplementedError
