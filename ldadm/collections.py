@@ -199,5 +199,11 @@ class LdapObjectMapping(MutableMapping):
     def __len__(self):
         raise NotImplementedError
 
+    def is_empty(self):
+        for item in self.values():
+            return False
+
+        return True
+
 class UserMapping(LdapObjectMapping):
     _attribute = cfg.user.attr.uid

@@ -50,15 +50,16 @@ class UserCommand(Command):
 
     def _uid_unique(self, uid):
         # raise an exception if UID is not unique
-        for active in (True, False):
-            query = "%s: %s" % (cfg.user.attr.uid, uid)
-            users = self._search(
-                    attrs = None,
-                    query = query,
-                    active = active)
-            if len(list(users)):
-                status = "an active" if active else "a suspended"
-                raise RuntimeError("UID %s in use by %s user" % (uid, status))
+        query = "%s: %s" % (cfg.user.attr.uid, uid)
+        for base in (cfg.user.base.suspended, cfg.user.base.active):
+            collisions = UserMapping(
+                    connection = self._conn,
+                    base = base,
+                    limit = query,
+                    object_def = self.__user)
+            if not collisions.is_empty():
+                raise RuntimeError("UID %s already in use" % uid)
+
         return uid
 
     @staticmethod

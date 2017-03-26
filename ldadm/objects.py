@@ -191,7 +191,7 @@ class User:
                 default = handler(default)
             except Exception as err:
                 # the callback failed; resort to user input
-                log.error(err)
+                log.warn(err)
                 default = None
 
         # prepare a human-readable default prompt; convert dict to semicolon-delimited string
