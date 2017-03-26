@@ -162,10 +162,18 @@ class LdapObjectMapping(MutableMapping):
             raise MissingObjects(self.__queue)
 
     def move_all(self, dest):
+        attr = self.__class__._attribute
+        try:
+            new_base = dest._base
+        except AttributeError:
+            new_base = dest
+
         writer = self._get_writer()
 
         for entry in writer:
-            entry.entry_move(dest._base)
+            key = entry[attr].value
+            entry.entry_move(new_base)
+            self.__queue.remove(key)
 
         writer.commit(refresh = False)
 

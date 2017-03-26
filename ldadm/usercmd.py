@@ -78,18 +78,13 @@ class UserCommand(Command):
             base_from = cfg.user.base.active
             base_to = cfg.user.base.suspended
 
-        query = "%s: %s" % ( cfg.user.attr.uid, ";".join(usernames) )
+        users = UserMapping(
+                connection = self._conn,
+                base = base_from,
+                limit = usernames,
+                object_def = self.__user)
 
-        users = self._get_writer(base_from, query)
-
-        for user in users:
-            uid = user[cfg.user.attr.uid].value
-            user.entry_move(base_to)
-            usernames.remove(uid)
-
-        users.commit(refresh = False)
-
-        self.__assert_empty(usernames)
+        users.move_all(base_to)
 
     def _search(self, attrs = None, query = None, active = True, operational = False):
         if active:
