@@ -232,20 +232,22 @@ class UserCommand(Command):
 
     def _get_keys(self, username):
         pubkey_attr = cfg.user.attr.pubkey
-        base = cfg.user.base.active
-        query = "%s: %s" % (cfg.user.attr.uid, username)
 
-        reader = Reader(
+        users = UserMapping(
                 connection = self._conn,
-                base = base,
-                query = query,
+                base = cfg.user.base.active,
+                limit = [username],
                 object_def = self.__user,
-                sub_tree = True)
-        if not reader.search(pubkey_attr):
-            raise RuntimeError("User %s not found" % username)
+                attrs = pubkey_attr)
+
+        user_list = [u for u in users]
+        try:
+            user = user_list[0]
+        except KeyError as e:
+            raise RuntimeError("User %s not found" % username) from e
 
         try:
-            keys = reader.entries[0][pubkey_attr]
+            keys = user[pubkey_attr]
         except LDAPKeyError:
             log.info("User %s has no public keys" % usernames)
             keys = []

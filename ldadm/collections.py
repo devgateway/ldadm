@@ -92,10 +92,18 @@ class LdapObjectMapping(MutableMapping):
 
     def values(self):
         attr = self.__class__._attribute
+        if self._attrs == ALL_ATTRIBUTES:
+            requested_attrs = self._attrs
+        elif type(self._attrs) is not list:
+            requested_attrs = [self._attrs]
+
+        if attr not in requested_attrs:
+            requested_attrs.append(attr)
+
         reader = self._get_reader()
         results = reader.search_paged(
                 paged_size = cfg.ldap.paged_search_size,
-                attributes = self._attrs)
+                attributes = requested_attrs)
         for entry in results:
             id = entry[attr].value
             try:
