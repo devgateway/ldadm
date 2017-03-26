@@ -149,19 +149,14 @@ class UserCommand(Command):
         self._set_active(usernames, active = True)
 
     def delete(self):
-        usernames = list(self._args_or_stdin("username"))
-        query = "%s: %s" % ( cfg.user.attr.uid, ";".join(usernames) )
+        users = UserMapping(
+                connection = self._conn,
+                base = cfg.user.base.suspended,
+                object_def = self.__user)
+        for username in self._args_or_stdin("username"):
+            del users[username]
 
-        users = self._get_writer(cfg.user.base.suspended, query)
-
-        for user in users:
-            uid = user[cfg.user.attr.uid].value
-            user.entry_delete()
-            usernames.remove(uid)
-
-        users.commit()
-
-        self.__assert_empty(usernames)
+        users.commit_delete()
 
     def _get_writer(self, base, query, attrs = None):
         if not attrs:
