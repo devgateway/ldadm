@@ -87,9 +87,6 @@ class LdapObjectMapping(MutableMapping):
         rdn = "=".join( [attr, escape_attribute_value(key)] )
         return safe_dn( [rdn, self._base] )
 
-    def _get_dn(self, id):
-        return self._getitem(id, attrs = None)["dn"]
-
     def __iter__(self):
         return self.values()
 
