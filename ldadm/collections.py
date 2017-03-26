@@ -169,6 +169,9 @@ class LdapObjectMapping(MutableMapping):
 
         writer.commit(refresh = False)
 
+        if self.__queue:
+            raise MissingObjects(self.__queue)
+
     def rename(self, id, new_id):
         writer = self._get_writer([id])
         entry = writer.entries[0]
