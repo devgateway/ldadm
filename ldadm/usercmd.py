@@ -218,20 +218,13 @@ class UserCommand(Command):
 
         log.debug("Final object:\n" + repr(user))
 
-        # Create a new virtual object
-        uid = user.attrs[uid_attr_name]
-        rdn = "=".join( [uid_attr_name, escape_attribute_value(uid)] )
-        dn = safe_dn([rdn, base])
-        query = "%s: %s" % (uid_attr_name, uid)
-        writer = self._get_writer(base, query)
-        entry = writer.new(dn)
-
-        # Set object properties from ciDict
-        for key in user.attrs:
-            setattr(entry, key, user.attrs[key])
-
         # Write the object to LDAP
-        entry.entry_commit_changes(refresh = False)
+        uid = user.attrs[uid_attr_name]
+        users = UserMapping(
+                connection = self._conn,
+                base = cfg.user.base.active,
+                object_def = self.__user)
+        users[uid] = user.attrs
 
         # Print the message
         if user.message:
