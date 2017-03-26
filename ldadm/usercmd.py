@@ -108,20 +108,26 @@ class UserCommand(Command):
                 paged_size = cfg.ldap.paged_search_size,
                 attributes = attrs)
 
-    def list_users(self):
+    def _list_users(self, limit = None):
+        if self._args.suspended:
+            base = cfg.user.base.suspended
+        else:
+            base = cfg.user.base.active
+
         users = UserMapping(
                 connection = self._conn,
-                base = cfg.user.base.active,
+                base = base,
+                limit = limit,
                 object_def = self.__user,
                 attrs = None)
         for uid in users.keys():
             print(uid)
 
+    def list_users(self):
+        self._list_users()
+
     def search(self):
-        query = self._args.filter
-        attrs = cfg.user.attr.uid
-        for user in self._search(attrs, query, active = not self._args.suspended):
-            print(user[cfg.user.attr.uid])
+        self._list_users(limit = self._args.filter)
 
     def show(self):
         usernames = list(self._args_or_stdin("username"))
