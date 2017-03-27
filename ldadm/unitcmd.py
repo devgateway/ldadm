@@ -20,7 +20,7 @@ class UnitCommand(Command):
                 object_class = object_class,
                 schema = self._conn)
 
-    def list_units(self):
+    def on_list(self):
         base = self._cfg.user.base.active
 
         reader = Reader(
