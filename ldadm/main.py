@@ -162,11 +162,17 @@ p = unit.add_parser("list",
 p.set_defaults(_event = "list")
 
 unit_show = unit.add_parser("show",
+        aliases = ["info"],
         help = "List members of the unit")
 unit_show.set_defaults(_event = "show")
 unit_show.add_argument("unit",
         metavar = "UNIT",
         help = "Unit ID")
+
+unit_add = unit.add_parser("add",
+        aliases = ["create"],
+        help = "Add an organizational unit")
+unit_add.set_defaults(_event = "add")
 
 # List commands
 

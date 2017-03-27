@@ -1,6 +1,6 @@
 _ldadm() {
 	local CUR="${COMP_WORDS[COMP_CWORD]}"
-	local KWD_OBJECTS="user list"
+	local KWD_OBJECTS="user list unit"
 	local KWD_SUSPENDED="--suspended"
 	local KWD_LOGLEVEL="--loglevel"
 	local KWD_DEFAULTS="--defaults -d"
@@ -25,6 +25,7 @@ _ldadm() {
 	case "${COMP_WORDS[OBJ_START]}" in
 		user) __ldadm_complete_user ;;
 		list) __ldadm_complete_list ;;
+		unit) __ldadm_complete_unit ;;
 		*)    __ldadm_complete_default ;;
 	esac
 }
@@ -134,6 +135,21 @@ __ldadm_complete_user() {
 # complete list commands
 __ldadm_complete_list() {
 	return 1
+}
+
+# complete unit commands
+__ldadm_complete_unit() {
+	# adjust COMP_CWORD for easier indexing, skip loglevel args
+	let COMP_CWORD=(COMP_CWORD - OBJ_START + 1)
+
+	case "${COMP_WORDS[OBJ_START + 1]}" in
+		list)
+			;;
+		*)
+			REPLY="list show info assign add create delete remove"
+			;;
+	esac
+	COMPREPLY=($(compgen -W "$REPLY" -- $CUR))
 }
 
 complete -F _ldadm ldadm
