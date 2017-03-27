@@ -23,12 +23,13 @@ class LdapObjectMapping(MutableMapping):
     _attribute = None
     _object_def = None
 
-    def __init__(self, base, limit = None, attrs = None):
+    def __init__(self, base, sub_tree = True, limit = None, attrs = None):
         if not self.__class__._attribute:
             raise ValueError("Primary attribute must be defined")
 
         self._base = base
         self._attrs = attrs
+        self._sub_tree = sub_tree
         self.__queue = []
 
         if not limit:
@@ -73,7 +74,7 @@ class LdapObjectMapping(MutableMapping):
                 base = self._base,
                 query = query,
                 object_def = self.__class__._object_def,
-                sub_tree = True)
+                sub_tree = self._sub_tree)
 
     def _get_writer(self, ids = None):
         attrs = self.__class__._attribute

@@ -161,6 +161,13 @@ p = unit.add_parser("list",
         help = "List all units")
 p.set_defaults(_event = "list")
 
+unit_show = unit.add_parser("show",
+        help = "List members of the unit")
+unit_show.set_defaults(_event = "show")
+unit_show.add_argument("unit",
+        metavar = "UNIT",
+        help = "Unit ID")
+
 # List commands
 
 list_parser = subcommands.add_parser("list",
