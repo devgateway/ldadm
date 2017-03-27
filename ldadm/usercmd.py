@@ -1,9 +1,8 @@
 import random, re, logging
 
-from ldap3 import ALL_ATTRIBUTES, ObjectDef, Reader, Writer
-from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, LDAPKeyError
-from ldap3.core.exceptions import LDAPAttributeOrValueExistsResult
-from ldap3.utils.dn import escape_attribute_value, safe_dn
+from ldap3 import ALL_ATTRIBUTES, ObjectDef
+from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, \
+        LDAPKeyError, LDAPAttributeOrValueExistsResult
 from sshpubkeys import SSHKey, InvalidKeyException
 
 from .console import pretty_print
@@ -36,7 +35,6 @@ class UserCommand(Command):
                     connection = self._conn,
                     base = base,
                     limit = query,
-                    object_def = self.__user,
                     attrs = attr_name)
 
             collisions = set( user[attr_name].value for user in users )
@@ -57,8 +55,7 @@ class UserCommand(Command):
             collisions = UserMapping(
                     connection = self._conn,
                     base = base,
-                    limit = query,
-                    object_def = self.__user)
+                    limit = query)
             if not collisions.is_empty():
                 raise RuntimeError("UID %s already in use" % uid)
 
@@ -75,8 +72,7 @@ class UserCommand(Command):
         users = UserMapping(
                 connection = self._conn,
                 base = base_from,
-                limit = usernames,
-                object_def = self.__user)
+                limit = usernames)
 
         users.move_all(base_to)
 
@@ -90,7 +86,6 @@ class UserCommand(Command):
                 connection = self._conn,
                 base = base,
                 limit = limit,
-                object_def = self.__user,
                 attrs = None)
         for uid in users.keys():
             print(uid)
@@ -112,7 +107,6 @@ class UserCommand(Command):
                 connection = self._conn,
                 base = base,
                 limit = usernames,
-                object_def = self.__user,
                 attrs = ALL_ATTRIBUTES) # TODO: operational attributes
         for user_entry in users:
             pretty_print(user_entry)
@@ -133,8 +127,7 @@ class UserCommand(Command):
         users = UserMapping(
                 connection = self._conn,
                 base = cfg.user.base.suspended,
-                limit = usernames,
-                object_def = self.__user)
+                limit = usernames)
         for username in usernames:
             del users[username]
 
@@ -145,8 +138,7 @@ class UserCommand(Command):
 
         users = UserMapping(
                 connection = self._conn,
-                base = base,
-                object_def = self.__user)
+                base = base)
         try:
             users.rename(self._args.oldname, self._args.newname)
         except LDAPEntryAlreadyExistsResult as err:
@@ -182,8 +174,7 @@ class UserCommand(Command):
         uid = user.attrs[uid_attr_name]
         users = UserMapping(
                 connection = self._conn,
-                base = cfg.user.base.active,
-                object_def = self.__user)
+                base = cfg.user.base.active)
         users[uid] = user.attrs
 
         # Print the message
@@ -195,7 +186,6 @@ class UserCommand(Command):
                 connection = self._conn,
                 base = cfg.user.base.active,
                 limit = [username],
-                object_def = self.__user,
                 attrs = attrs)
 
         user_list = [u for u in users]

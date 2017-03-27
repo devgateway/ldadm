@@ -20,15 +20,15 @@ class MissingObjects(Exception):
 
 class LdapObjectMapping(MutableMapping):
     _attribute = None
+    _object_def = None
 
-    def __init__(self, connection, base, object_def, limit = None, attrs = None):
+    def __init__(self, connection, base, limit = None, attrs = None):
         if not self.__class__._attribute:
             raise ValueError("Primary attribute must be defined")
 
         self._conn = connection
         self._base = base
         self._attrs = attrs
-        self._object_def = object_def
         self.__queue = []
 
         if not limit:
@@ -72,7 +72,7 @@ class LdapObjectMapping(MutableMapping):
                 connection = self._conn,
                 base = self._base,
                 query = query,
-                object_def = self._object_def,
+                object_def = self.__class__._object_def,
                 sub_tree = True)
 
     def _get_writer(self, ids = None):
@@ -209,3 +209,11 @@ class LdapObjectMapping(MutableMapping):
 
 class UserMapping(LdapObjectMapping):
     _attribute = cfg.user.attr.uid
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if not self.__class__._object_def:
+            self.__class__._object_def = ObjectDef(
+                    object_class = cfg.user.objectclass,
+                    schema = self._conn)
