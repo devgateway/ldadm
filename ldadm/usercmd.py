@@ -64,15 +64,6 @@ class UserCommand(Command):
 
         return uid
 
-    @staticmethod
-    def __assert_empty(usernames, critical = True):
-        if usernames:
-            msg = "Users not found: " + ", ".join(usernames)
-            if critical:
-                raise RuntimeError(msg)
-            else:
-                log.error(msg)
-
     def _set_active(self, usernames, active = True):
         if active:
             base_from = cfg.user.base.suspended
@@ -149,19 +140,6 @@ class UserCommand(Command):
 
         users.commit_delete()
 
-    def _get_writer(self, base, query, attrs = None):
-        if not attrs:
-            attrs = cfg.user.attr.uid
-
-        reader = Reader(
-                connection = self._conn,
-                base = base,
-                query = query,
-                object_def = self.__user,
-                sub_tree = True)
-        reader.search(attrs)
-        return Writer.from_cursor(reader)
-
     def rename(self):
         base = cfg.user.base.active
 
@@ -226,23 +204,23 @@ class UserCommand(Command):
         except KeyError as err:
             raise RuntimeError("User %s not found" % username) from err
 
-    def _get_keys(self, username):
-        pubkey_attr = cfg.user.attr.pubkey
-
-        user = self._get_user(username, pubkey_attr)
-
-        try:
-            keys = user[pubkey_attr]
-        except LDAPKeyError:
-            log.info("User %s has no public keys" % usernames)
-            keys = []
-
-        return keys
-
     def list_keys(self):
         username = self._args.username
 
-        for key in self._get_keys(username):
+        def get_keys():
+            pubkey_attr = cfg.user.attr.pubkey
+
+            user = self._get_user(username, pubkey_attr)
+
+            try:
+                keys = user[pubkey_attr]
+            except LDAPKeyError:
+                log.info("User %s has no public keys" % usernames)
+                keys = []
+
+            return keys
+
+        for key in get_keys():
             if type(key) is bytes:
                 key_string = key.decode("utf-8")
             elif type(key) is str:
