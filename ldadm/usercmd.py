@@ -229,7 +229,7 @@ class UserCommand(Command):
     def _get_keys(self, username):
         pubkey_attr = cfg.user.attr.pubkey
 
-        user = _get_user(username, pubkey_attr)
+        user = self._get_user(username, pubkey_attr)
 
         try:
             keys = user[pubkey_attr]
@@ -271,14 +271,7 @@ class UserCommand(Command):
 
         # get the writable entry
         pubkey_attr = cfg.user.attr.pubkey
-        base = cfg.user.base.active
-        query = "%s: %s" % (cfg.user.attr.uid, username)
-
-        try:
-            writer = self._get_writer(base, query, attrs = pubkey_attr)
-            user = writer[0]
-        except KeyError as err:
-            raise RuntimeError("User %s not found" % username) from err
+        user = self._get_user(username, pubkey_attr).entry_writable()
 
         keys = user[pubkey_attr]
 
@@ -293,7 +286,7 @@ class UserCommand(Command):
             keys += key_string
 
         try:
-            writer.commit(refresh = False)
+            user.entry_commit_changes(refresh = False)
         except LDAPAttributeOrValueExistsResult as err:
             raise RuntimeError("Key already exists") from err
 
@@ -320,14 +313,8 @@ class UserCommand(Command):
 
         # get the writable entry
         pubkey_attr = cfg.user.attr.pubkey
-        base = cfg.user.base.active
-        query = "%s: %s" % (cfg.user.attr.uid, username)
 
-        try:
-            writer = self._get_writer(base, query, attrs = pubkey_attr)
-            user = writer[0]
-        except KeyError as err:
-            raise RuntimeError("User %s not found" % username) from err
+        user = self._get_user(username, pubkey_attr).entry_writable()
 
         try:
             keys = user[pubkey_attr]
@@ -351,7 +338,7 @@ class UserCommand(Command):
                         keys -= key
                         del keys_to_delete[item]
 
-            writer.commit(refresh = False)
+            user.entry_commit_changes(refresh = False)
 
             if keys_to_delete:
                 missing_keys = ", ".join( keys_to_delete.values() )
