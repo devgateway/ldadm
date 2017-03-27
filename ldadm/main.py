@@ -149,6 +149,10 @@ p.add_argument("key_names",
         help = "Public key MD5 modulus or comment")
 
 # Unit commands
+single_unit_parser = argparse.ArgumentParser(add_help = False)
+single_unit_parser.add_argument("unit",
+        metavar = "UNIT",
+        help = "Unit name")
 
 unit_parser = subcommands.add_parser("unit",
         help = "Organizational units")
@@ -162,17 +166,32 @@ p = unit.add_parser("list",
 p.set_defaults(_event = "list")
 
 unit_show = unit.add_parser("show",
+        parents = [single_unit_parser],
         aliases = ["info"],
         help = "List members of the unit")
 unit_show.set_defaults(_event = "show")
-unit_show.add_argument("unit",
-        metavar = "UNIT",
-        help = "Unit ID")
 
 unit_add = unit.add_parser("add",
         aliases = ["create"],
         help = "Add an organizational unit")
 unit_add.set_defaults(_event = "add")
+
+multi_unit_parser = argparse.ArgumentParser(add_help = False)
+multi_unit_parser.add_argument("unit",
+        metavar = "UNIT_NAME",
+        nargs = "*",
+        help = "One or more unit names. If omitted, read from stdin.")
+
+unit_delete = unit.add_parser("delete",
+        parents = [multi_unit_parser],
+        aliases = ["remove"],
+        help = "Delete an organizational unit")
+unit_delete.set_defaults(_event = "delete")
+
+unit_assign = unit.add_parser("assign",
+        parents = [single_unit_parser, multi_user_parser],
+        help = "Move users to the organizational unit")
+unit_assign.set_defaults(_event = "assign")
 
 # List commands
 
