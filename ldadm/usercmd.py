@@ -152,11 +152,16 @@ class UserCommand(Command):
         self._set_active(usernames, active = True)
 
     def delete(self):
+        usernames = list(self._args_or_stdin("username"))
+        if not usernames:
+            return
+
         users = UserMapping(
                 connection = self._conn,
                 base = cfg.user.base.suspended,
+                limit = usernames,
                 object_def = self.__user)
-        for username in self._args_or_stdin("username"):
+        for username in usernames:
             del users[username]
 
         users.commit_delete()
