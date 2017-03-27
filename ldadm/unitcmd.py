@@ -14,9 +14,7 @@ class UnitCommand(Command):
     __base = cfg.user.base.active
 
     def _get_unit(self, unit_name):
-        units = UnitMapping(
-                base = __class__.__base,
-                limit = [unit_name])
+        units = UnitMapping(base = __class__.__base, limit = [unit_name])
 
         try:
             unit_list = [u for u in units]

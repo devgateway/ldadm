@@ -25,10 +25,7 @@ class UserCommand(Command):
         # find existing UIDs, and remove them from the list of candidates
         for base in (cfg.user.base.suspended, cfg.user.base.active):
             query = attr_name + ": " + "; ".join( map(str, candidates) )
-            users = UserMapping(
-                    base = base,
-                    limit = query,
-                    attrs = attr_name)
+            users = UserMapping(base = base, limit = query, attrs = attr_name)
 
             collisions = set( user[attr_name].value for user in users )
             candidates -= collisions
@@ -45,9 +42,7 @@ class UserCommand(Command):
         # raise an exception if UID is not unique
         query = "%s: %s" % (cfg.user.attr.uid, uid)
         for base in (cfg.user.base.suspended, cfg.user.base.active):
-            collisions = UserMapping(
-                    base = base,
-                    limit = query)
+            collisions = UserMapping(base = base, limit = query)
             if not collisions.is_empty():
                 raise RuntimeError("UID %s already in use" % uid)
 
@@ -61,10 +56,7 @@ class UserCommand(Command):
             base_from = cfg.user.base.active
             base_to = cfg.user.base.suspended
 
-        users = UserMapping(
-                base = base_from,
-                limit = usernames)
-
+        users = UserMapping(base = base_from, limit = usernames)
         users.move_all(base_to)
 
     def _list_users(self, limit = None):
@@ -90,10 +82,8 @@ class UserCommand(Command):
         else:
             base = cfg.user.base.active
 
-        users = UserMapping(
-                base = base,
-                limit = usernames,
-                attrs = ALL_ATTRIBUTES) # TODO: operational attributes
+        # TODO: operational attributes
+        users = UserMapping(base = base, limit = usernames, attrs = ALL_ATTRIBUTES)
         try:
             for user_entry in users:
                 pretty_print(user_entry)
@@ -113,9 +103,7 @@ class UserCommand(Command):
         if not usernames:
             return
 
-        users = UserMapping(
-                base = cfg.user.base.suspended,
-                limit = usernames)
+        users = UserMapping(base = cfg.user.base.suspended, limit = usernames)
         for username in usernames:
             del users[username]
 
@@ -162,10 +150,7 @@ class UserCommand(Command):
             print(user.message)
 
     def _get_user(self, username, attrs = None):
-        users = UserMapping(
-                base = cfg.user.base.active,
-                limit = [username],
-                attrs = attrs)
+        users = UserMapping(base = cfg.user.base.active, limit = [username], attrs = attrs)
 
         try:
             user_list = [u for u in users]

@@ -1,7 +1,7 @@
 import copy, logging
 try:
     from collections.abc import MutableMapping
-except(ImportError):
+except ImportError:
     from collections import MutableMapping
 
 from ldap3.utils.dn import escape_attribute_value, safe_dn, safe_rdn
