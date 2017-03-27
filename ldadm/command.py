@@ -50,17 +50,3 @@ class Command:
             with sys.__stdin__ as file_object:
                 for line in file_object:
                     yield line[:-1] # in text mode linesep is always "\n"
-
-    @staticmethod
-    def _get_new_rdn(entry, attr_name, new_val):
-        # RDN can be an array: gn=John+sn=Doe
-        old_rdn = safe_rdn(entry.entry_dn, decompose = True)
-        new_rdn = []
-        for key_val in old_rdn:
-            if key_val[0] == attr_name:
-                # primary ID element
-                new_rdn.append( (key_val[0], new_val) )
-            else:
-                new_rdn.append(key_val)
-
-        return "+".join( map(lambda key_val: "%s=%s" % key_val, new_rdn) )
