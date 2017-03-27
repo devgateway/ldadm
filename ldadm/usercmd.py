@@ -121,8 +121,7 @@ class UserCommand(Command):
     def on_rename(self):
         base = cfg.user.base.active
 
-        users = UserMapping(
-                base = base)
+        users = UserMapping(base = base)
         try:
             users.rename(self._args.oldname, self._args.newname)
         except LDAPEntryAlreadyExistsResult as err:
@@ -149,8 +148,6 @@ class UserCommand(Command):
                 config_node = cfg.user,
                 reference_object = source_obj,
                 handlers = handlers)
-
-        log.debug("Final object:\n" + repr(user))
 
         # Write the object to LDAP
         uid = user.attrs[uid_attr_name]
