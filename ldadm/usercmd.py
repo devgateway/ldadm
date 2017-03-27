@@ -1,6 +1,6 @@
 import random, re, logging
 
-from ldap3 import ALL_ATTRIBUTES, ObjectDef
+from ldap3 import ALL_ATTRIBUTES
 from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, \
         LDAPKeyError, LDAPAttributeOrValueExistsResult
 from sshpubkeys import SSHKey, InvalidKeyException
@@ -14,12 +14,6 @@ from .config import cfg
 log = logging.getLogger(__name__)
 
 class UserCommand(Command):
-    def __init__(self, args):
-        super().__init__(args)
-        self.__user = ObjectDef(
-                object_class = cfg.user.objectclass,
-                schema = self._conn)
-
     def _get_unique_id_number(self, *args_ignored):
         umin = cfg.user.nuid.min
         umax = cfg.user.nuid.max
@@ -32,7 +26,6 @@ class UserCommand(Command):
         for base in (cfg.user.base.suspended, cfg.user.base.active):
             query = attr_name + ": " + "; ".join( map(str, candidates) )
             users = UserMapping(
-                    connection = self._conn,
                     base = base,
                     limit = query,
                     attrs = attr_name)
@@ -53,7 +46,6 @@ class UserCommand(Command):
         query = "%s: %s" % (cfg.user.attr.uid, uid)
         for base in (cfg.user.base.suspended, cfg.user.base.active):
             collisions = UserMapping(
-                    connection = self._conn,
                     base = base,
                     limit = query)
             if not collisions.is_empty():
@@ -70,7 +62,6 @@ class UserCommand(Command):
             base_to = cfg.user.base.suspended
 
         users = UserMapping(
-                connection = self._conn,
                 base = base_from,
                 limit = usernames)
 
@@ -83,7 +74,6 @@ class UserCommand(Command):
             base = cfg.user.base.active
 
         users = UserMapping(
-                connection = self._conn,
                 base = base,
                 limit = limit,
                 attrs = None)
@@ -104,7 +94,6 @@ class UserCommand(Command):
             base = cfg.user.base.active
 
         users = UserMapping(
-                connection = self._conn,
                 base = base,
                 limit = usernames,
                 attrs = ALL_ATTRIBUTES) # TODO: operational attributes
@@ -125,7 +114,6 @@ class UserCommand(Command):
             return
 
         users = UserMapping(
-                connection = self._conn,
                 base = cfg.user.base.suspended,
                 limit = usernames)
         for username in usernames:
@@ -137,7 +125,6 @@ class UserCommand(Command):
         base = cfg.user.base.active
 
         users = UserMapping(
-                connection = self._conn,
                 base = base)
         try:
             users.rename(self._args.oldname, self._args.newname)
@@ -161,20 +148,16 @@ class UserCommand(Command):
                 cfg.user.attr.passwd: User.make_password
                 }
 
-        User.object_def = self.__user
         user = User(
                 config_node = cfg.user,
                 reference_object = source_obj,
-                handlers = handlers
-                )
+                handlers = handlers)
 
         log.debug("Final object:\n" + repr(user))
 
         # Write the object to LDAP
         uid = user.attrs[uid_attr_name]
-        users = UserMapping(
-                connection = self._conn,
-                base = cfg.user.base.active)
+        users = UserMapping(base = cfg.user.base.active)
         users[uid] = user.attrs
 
         # Print the message
@@ -183,7 +166,6 @@ class UserCommand(Command):
 
     def _get_user(self, username, attrs = None):
         users = UserMapping(
-                connection = self._conn,
                 base = cfg.user.base.active,
                 limit = [username],
                 attrs = attrs)

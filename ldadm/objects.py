@@ -5,14 +5,18 @@ except ImportError:
     import random
 
 from ldap3.utils.ciDict import CaseInsensitiveWithAliasDict
+from ldap3 import ObjectDef
 
-from .config import ConfigAttrError
+from .config import cfg, ConfigAttrError
 from .console import input_stderr
+from .connection import ldap
 
 log = logging.getLogger(__name__)
 
 class User:
-    object_def = None
+    __object_def = ObjectDef(
+            object_class = cfg.user.objectclass,
+            schema = ldap)
 
     @staticmethod
     def make_password(*args_ignored):
@@ -63,7 +67,7 @@ class User:
             pass # if this dict is missing, ignore
 
         # Resolve each attribute recursively
-        for attr_def in __class__.object_def:
+        for attr_def in __class__.__object_def:
             key = attr_def.key
             if key in self._templates or key in self._required_attrs or attr_def.mandatory:
                 if key.lower() == "objectclass":
@@ -114,7 +118,7 @@ class User:
         """Normalize attribute name to use as CaseInsensitiveWithAliasDict index"""
         # rewritten from ldap3 library:
         # take properly cased attribute name, add other names as aliases
-        definition = __class__.object_def[raw_name]
+        definition = __class__.__object_def[raw_name]
         all_names = [definition.key]
         if definition.oid_info:
             for name in definition.oid_info.name:

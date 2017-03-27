@@ -8,6 +8,7 @@ from ldap3.utils.dn import escape_attribute_value, safe_dn, safe_rdn
 from ldap3 import ALL_ATTRIBUTES, ObjectDef, Reader, Writer
 
 from .config import cfg
+from .connection import ldap
 
 log = logging.getLogger(__name__)
 
@@ -22,11 +23,10 @@ class LdapObjectMapping(MutableMapping):
     _attribute = None
     _object_def = None
 
-    def __init__(self, connection, base, limit = None, attrs = None):
+    def __init__(self, base, limit = None, attrs = None):
         if not self.__class__._attribute:
             raise ValueError("Primary attribute must be defined")
 
-        self._conn = connection
         self._base = base
         self._attrs = attrs
         self.__queue = []
@@ -69,7 +69,7 @@ class LdapObjectMapping(MutableMapping):
             query = self._default_query
 
         return Reader(
-                connection = self._conn,
+                connection = ldap,
                 base = self._base,
                 query = query,
                 object_def = self.__class__._object_def,
@@ -216,4 +216,4 @@ class UserMapping(LdapObjectMapping):
         if not self.__class__._object_def:
             self.__class__._object_def = ObjectDef(
                     object_class = cfg.user.objectclass,
-                    schema = self._conn)
+                    schema = ldap)
