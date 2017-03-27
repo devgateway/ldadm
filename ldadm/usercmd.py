@@ -8,7 +8,7 @@ from sshpubkeys import SSHKey, InvalidKeyException
 from .console import pretty_print
 from .objects import User
 from .command import Command
-from .collections import UserMapping
+from .collections import UserMapping, MissingObjects
 from .config import cfg
 
 log = logging.getLogger(__name__)
@@ -94,8 +94,11 @@ class UserCommand(Command):
                 base = base,
                 limit = usernames,
                 attrs = ALL_ATTRIBUTES) # TODO: operational attributes
-        for user_entry in users:
-            pretty_print(user_entry)
+        try:
+            for user_entry in users:
+                pretty_print(user_entry)
+        except MissingObjects as err:
+            raise RuntimeError("Users not found: " + ", ".join(err.items))
 
     def on_suspend(self):
         usernames = list(self._args_or_stdin("username"))
@@ -164,10 +167,10 @@ class UserCommand(Command):
                 limit = [username],
                 attrs = attrs)
 
-        user_list = [u for u in users]
         try:
+            user_list = [u for u in users]
             return user_list[0]
-        except KeyError as err:
+        except MissingObjects as err:
             raise RuntimeError("User %s not found" % username) from err
 
     def on_key_list(self):
