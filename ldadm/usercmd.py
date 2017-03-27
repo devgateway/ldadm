@@ -89,23 +89,6 @@ class UserCommand(Command):
 
         users.move_all(base_to)
 
-    def _search(self, attrs = None, query = None, active = True, operational = False):
-        if active:
-            base = cfg.user.base.active
-        else:
-            base = cfg.user.base.suspended
-
-        reader = Reader(
-                connection = self._conn,
-                base = base,
-                query = query,
-                object_def = self.__user,
-                sub_tree = True)
-        reader.get_operational_attributes = operational
-        return reader.search_paged(
-                paged_size = cfg.ldap.paged_search_size,
-                attributes = attrs)
-
     def _list_users(self, limit = None):
         if self._args.suspended:
             base = cfg.user.base.suspended
