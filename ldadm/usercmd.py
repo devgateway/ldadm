@@ -30,12 +30,14 @@ class UserCommand(Command):
         candidates = set( random.randint(umin, umax) for i in range(n) )
 
         # find existing UIDs, and remove them from the list of candidates
-        for active in (True, False):
+        for base in (cfg.user.base.suspended, cfg.user.base.active):
             query = attr_name + ": " + "; ".join( map(str, candidates) )
-            users = self._search(
-                    attrs = attr_name,
-                    active = active,
-                    query = query)
+            users = UserMapping(
+                    connection = self._conn,
+                    base = base,
+                    limit = query,
+                    object_def = self.__user,
+                    attrs = attr_name)
 
             collisions = set( user[attr_name].value for user in users )
             candidates -= collisions

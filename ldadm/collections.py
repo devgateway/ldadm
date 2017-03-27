@@ -94,6 +94,8 @@ class LdapObjectMapping(MutableMapping):
         attr = self.__class__._attribute
         if self._attrs == ALL_ATTRIBUTES:
             requested_attrs = self._attrs
+        elif self._attrs is None:
+            requested_attrs = []
         elif type(self._attrs) is not list:
             requested_attrs = [self._attrs]
 
