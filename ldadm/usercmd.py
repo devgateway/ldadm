@@ -73,10 +73,7 @@ class UserCommand(Command):
         else:
             base = cfg.user.base.active
 
-        users = UserMapping(
-                base = base,
-                limit = limit,
-                attrs = None)
+        users = UserMapping(base = base, limit = limit)
         for uid in users.keys():
             print(uid)
 

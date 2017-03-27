@@ -217,3 +217,14 @@ class UserMapping(LdapObjectMapping):
             self.__class__._object_def = ObjectDef(
                     object_class = cfg.user.objectclass,
                     schema = ldap)
+
+class UnitMapping(LdapObjectMapping):
+    _attribute = "organizationalUnitName"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if not self.__class__._object_def:
+            self.__class__._object_def = ObjectDef(
+                    object_class = "organizationalUnit",
+                    schema = ldap)
