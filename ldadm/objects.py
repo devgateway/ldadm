@@ -241,3 +241,8 @@ class User(LdapObject):
     def __init__(self, config_node, reference_object = None, handlers = []):
         self._required_attrs = [ self._canonicalize_name(config_node.attr.passwd)[0] ]
         super().__init__(config_node, reference_object, handlers)
+
+class Unit(LdapObject):
+    _object_def = ObjectDef(
+            object_class = "organizationalUnit",
+            schema = ldap)

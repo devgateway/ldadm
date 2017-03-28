@@ -9,6 +9,7 @@ from ldap3 import ALL_ATTRIBUTES, ObjectDef, Reader, Writer
 
 from .config import cfg
 from .connection import ldap
+from .objects import User, Unit
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +22,6 @@ class MissingObjects(Exception):
 
 class LdapObjectMapping(MutableMapping):
     _attribute = None
-    _object_def = None
 
     def __init__(self, base, sub_tree = True, limit = None, attrs = None):
         if not self.__class__._attribute:
@@ -210,22 +210,8 @@ class LdapObjectMapping(MutableMapping):
 
 class UserMapping(LdapObjectMapping):
     _attribute = cfg.user.attr.uid
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if not self.__class__._object_def:
-            self.__class__._object_def = ObjectDef(
-                    object_class = cfg.user.objectclass,
-                    schema = ldap)
+    _object_def = User._object_def
 
 class UnitMapping(LdapObjectMapping):
     _attribute = "organizationalUnitName"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if not self.__class__._object_def:
-            self.__class__._object_def = ObjectDef(
-                    object_class = "organizationalUnit",
-                    schema = ldap)
+    _object_def = Unit._object_def

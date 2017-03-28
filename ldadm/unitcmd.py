@@ -37,3 +37,5 @@ class UnitCommand(Command):
         users = UserMapping(base = unit_dn, sub_tree = sub_tree)
         for uid in users.keys():
             print(uid)
+
+    def on_add(self):

@@ -149,7 +149,7 @@ __ldadm_complete_unit() {
 	let COMP_CWORD=(COMP_CWORD - OBJ_START + 1)
 
 	case "${COMP_WORDS[OBJ_START + 1]}" in
-		list) ;;
+		list|add) ;;
 		show|info)
 			case "$COMP_CWORD" in
 				3)
