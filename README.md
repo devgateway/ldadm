@@ -2,7 +2,7 @@
 
 ## Synopsis
 
-	ldadm [OPTIONS…] {user|list|server|project} [ARGUMENTS…]
+	ldadm [OPTIONS…] {user|unit|list|server|project} [ARGUMENTS…]
 
 ### User commands
 
@@ -15,6 +15,13 @@
 	ldadm user key list USER_NAME
 	ldadm user key delete USER_NAME KEY_NAME…
 	ldadm user key add [{-f|--file} FILE_NAME] USER_NAME
+
+### Unit commands
+
+	ldadm unit {list|add}
+	ldadm unit show [--full] UNIT
+	ldadm unit delete UNIT
+	ldadm unit assign UNIT [USER_NAME…]
 
 ### List commands
 
@@ -115,6 +122,38 @@ Delete public keys from the user by MD5 hash or comment. MD5 prefix and separato
 
 Add public keys to the user, reading one key per line from the given file, or standard input. Only single-line keys (OpenSSH format) are supported, not PEM-encoded PKCS#1 ones.
 
+## Unit commands
+
+### Listing units
+
+	ldadm unit list
+
+Search for units in subtree scope, i.e. including the root unit, and display their IDs (names).
+
+### Listing users in a unit
+
+	ldadm unit show [--full] UNIT
+
+List user IDs belonging to a unit. If `--full` argument is given, a subtree search is made, i.e. users from nested units are included.
+
+### Creating a new unit
+
+	ldadm unit add
+
+Add a new unit, prompting the user for required attributes.
+
+### Deleting a unit
+
+	ldadm unit delete UNIT
+
+Removing an empty unit. LDAP server must refuse the operation if the unit is not empty.
+
+### Moving people to a unit
+
+	ldadm unit assign UNIT [USER_NAME…]
+
+Assign users to a unit, moving their accounts from their current unit(s). User names are read from argument list, or standard input.
+
 ## Configuration file
 
 The program will look for the configuration file in these locations:
@@ -156,3 +195,9 @@ Contains settings and templates for user account objects.
 * `templates` — an optional dictionary, where keys are attribute names, and values are Python formatting strings (or lists thereof), that can refer to other attributes. Be sure to quote the values if they start with a brace, because braces are special in YAML. Don't cause infinite recursion by defining attributes using each other.
 
 * `modify` — an optional dictionary, where keys are attribute names, and values are Python string functions. Functions get applied to default attribute values after formatting, but before confirming with the user. Permitted functions are: capitalize, casefold, lower, swapcase, title, upper.
+
+## Environment
+
+* `XDG_CONFIG_HOME`, `HOME` — used to search the configuration file, see details above.
+
+* `LOG_LEVEL` — logging verbosity. Valid levels are: CRITICAL, ERROR, WARNING, INFO, and DEBUG; with WARNING being the default. If level is DEBUG, unexpected exceptions are not trapped, and backtrace is printed.
