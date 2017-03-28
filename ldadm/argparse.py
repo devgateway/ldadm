@@ -190,6 +190,12 @@ _parsers = {
                     "parents": [single_unit],
                     "aliases": ["info"],
                     "help": "List members of the unit"
+                },
+                "arguments": {
+                    "--full": {
+                        "action": "store_true",
+                        "help": "List members in nested units, too"
+                    }
                 }
             },
             "add": {

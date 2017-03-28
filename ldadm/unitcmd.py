@@ -29,9 +29,11 @@ class UnitCommand(Command):
 
     def on_show(self):
         unit_name = self._args.unit
+        sub_tree = self._args.full
+
         unit = self._get_unit(unit_name)
         unit_dn = unit.entry_dn
 
-        users = UserMapping(base = unit_dn, sub_tree = False)
+        users = UserMapping(base = unit_dn, sub_tree = sub_tree)
         for uid in users.keys():
             print(uid)
