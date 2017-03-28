@@ -13,40 +13,17 @@ from .connection import ldap
 
 log = logging.getLogger(__name__)
 
-class User:
-    __object_def = ObjectDef(
-            object_class = cfg.user.objectclass,
-            schema = ldap)
+class LdapObject:
+    _object_def = None
 
-    @staticmethod
-    def make_password(*args_ignored):
-        """Generate a random password of random length"""
-
-        len_min = 10
-        len_max = 18
-        alphabet = string.ascii_letters + string.punctuation + string.digits
-
-        # select random password length within given limits
-        # then for each position randomly select a character from the alphabet
-        try:
-            length = len_min + secrets.randbelow(len_max - len_min + 1)
-            chars = [ secrets.choice(alphabet) for i in range(length) ]
-        except NameError:
-            log.warning("Python module 'secrets' not available, suggesting insecure password")
-            length = random.randrange(len_min, len_max)
-            chars = [ random.choice(alphabet) for i in range(length) ]
-
-        return ''.join(chars)
-
-    def __init__(self, config_node, reference_object = None, handlers = []):
-        self._reference = reference_object
+    def __init__(self, config_node, reference_object, handlers = []):
         self._handlers = handlers
         self._templates = self._read_templates(config_node)
         self._modifiers = self._read_modifiers(config_node)
         self.attrs = CaseInsensitiveWithAliasDict()
         self.message = ""
-
-        self._required_attrs = [ self._canonicalize_name(config_node.attr.passwd)[0] ]
+        self._required_attrs = []
+        self._reference = reference_object
 
         # resolve a message that will be output
         try:
@@ -67,7 +44,7 @@ class User:
             pass # if this dict is missing, ignore
 
         # Resolve each attribute recursively
-        for attr_def in __class__.__object_def:
+        for attr_def in self.__class__._object_def:
             key = attr_def.key
             if key in self._templates or key in self._required_attrs or attr_def.mandatory:
                 if key.lower() == "objectclass":
@@ -118,7 +95,7 @@ class User:
         """Normalize attribute name to use as CaseInsensitiveWithAliasDict index"""
         # rewritten from ldap3 library:
         # take properly cased attribute name, add other names as aliases
-        definition = __class__.__object_def[raw_name]
+        definition = self.__class__._object_def[raw_name]
         all_names = [definition.key]
         if definition.oid_info:
             for name in definition.oid_info.name:
@@ -235,3 +212,32 @@ class User:
 
     def __repr__(self):
         return repr(self.attrs)
+
+class User(LdapObject):
+    _object_def = ObjectDef(
+            object_class = cfg.user.objectclass,
+            schema = ldap)
+
+    @staticmethod
+    def make_password(*args_ignored):
+        """Generate a random password of random length"""
+
+        len_min = 10
+        len_max = 18
+        alphabet = string.ascii_letters + string.punctuation + string.digits
+
+        # select random password length within given limits
+        # then for each position randomly select a character from the alphabet
+        try:
+            length = len_min + secrets.randbelow(len_max - len_min + 1)
+            chars = [ secrets.choice(alphabet) for i in range(length) ]
+        except NameError:
+            log.warning("Python module 'secrets' not available, suggesting insecure password")
+            length = random.randrange(len_min, len_max)
+            chars = [ random.choice(alphabet) for i in range(length) ]
+
+        return ''.join(chars)
+
+    def __init__(self, config_node, reference_object = None, handlers = []):
+        self._required_attrs = [ self._canonicalize_name(config_node.attr.passwd)[0] ]
+        super().__init__(config_node, reference_object, handlers)
