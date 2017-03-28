@@ -10,11 +10,11 @@
 	ldadm user search [--suspended] LDAP_FILTER
 	ldadm user show [--suspended] [USER_NAME…]
 	ldadm user {suspend|restore|delete} [USER_NAME…]
-	ldadm user add [{-d|--defaults} USER_NAME]
+	ldadm user add [--defaults USER_NAME]
 	ldadm user rename OLD_NAME NEW_NAME
 	ldadm user key list USER_NAME
 	ldadm user key delete USER_NAME KEY_NAME…
-	ldadm user key add [{-f|--file} FILE_NAME] USER_NAME
+	ldadm user key add [--file FILE_NAME] USER_NAME
 
 ### Unit commands
 
@@ -72,7 +72,7 @@ Delete the accounts from LDAP completely. Only suspended accounts will be consid
 
 ### Creating a new user
 
-	ldadm user add [{-d|--defaults} USER_NAME]
+	ldadm user add [--defaults USER_NAME]
 
 Create a new user account. Necessary attributes will be requested from user input. Necessary attributes include:
 
@@ -118,7 +118,7 @@ Delete public keys from the user by MD5 hash or comment. MD5 prefix and separato
 
 ### Adding SSH public keys to a user
 
-	ldadm user key add [{-f|--file} FILE_NAME] USER_NAME
+	ldadm user key add [--file FILE_NAME] USER_NAME
 
 Add public keys to the user, reading one key per line from the given file, or standard input. Only single-line keys (OpenSSH format) are supported, not PEM-encoded PKCS#1 ones.
 

@@ -3,8 +3,8 @@ _ldadm() {
 	local KWD_OBJECTS="user list unit"
 	local KWD_SUSPENDED="--suspended"
 	local KWD_LOGLEVEL="--loglevel"
-	local KWD_DEFAULTS="--defaults -d"
-	local KWD_FILE="--file -f"
+	local KWD_DEFAULTS="--defaults"
+	local KWD_FILE="--file"
 	local OBJ_START
 	local PREV
 	local REPLY
