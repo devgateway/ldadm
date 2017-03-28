@@ -232,33 +232,28 @@ def _get_args():
         else:
             kwargs = {}
 
-        log.debug("With parser %s:" % parser_name)
-        #log.debug("add_parser('%s', %s)" % (parser_name, repr(kwargs)))
+        log.debug("add_parser %s" % parser_name)
         parser = parent.add_parser(parser_name, **kwargs)
 
         if "defaults" in parser_opts:
             for key, value in parser_opts["defaults"].items():
-                log.debug("For parser %s, setting defaults %s = %s" % \
-                        (parser_name, key, value) )
+                log.debug("%s.set_defaults %s = %s" % (parser_name, key, value) )
                 kwargs = {key: value}
-                #log.debug("%s.set_defaults(%s)" % (parser_name, repr(kwargs)))
                 parser.set_defaults(**kwargs)
 
         if "arguments" in parser_opts:
             for arg, kwargs in parser_opts["arguments"].items():
-                log.debug("To parser %s, adding argument %s" % (parser_name, arg))
-                #log.debug("%s.add_argument(%s, %s)" % (parser_name, arg, repr(kwargs)))
+                log.debug("%s.add_argument %s" % (parser_name, arg))
                 parser.add_argument(arg, **kwargs)
 
         if "subparsers" in parser_opts:
-            log.debug("Generating subparsers for %s" % parser_name)
             title = parser_opts["subparsers_title"]
-            #log.debug("%s.add_subparsers(title = '%s')" % (parser_name, title))
             subparsers = parser.add_subparsers(title = title)
             for subparser_name, subparser_opts in parser_opts["subparsers"].items():
-                log.debug("To %s, adding subparser %s" % (parser_name, subparser_name))
+                log.debug("%s.add_subparser %s" % (parser_name, subparser_name))
                 _gen_parser(subparsers, subparser_name, subparser_opts)
 
+    log.debug("Setting up argument parser")
     ap = argparse.ArgumentParser(description = "Manage LDAP accounts")
 
     subcommands = ap.add_subparsers(description = "Objects to manage", dest = "subcommand")
@@ -267,6 +262,7 @@ def _get_args():
     for parser_name, parser_opts in parsers.items():
         _gen_parser(subcommands, parser_name, parser_opts)
 
+    log.debug("Parsing arguments")
     args = ap.parse_args()
     return args
 
