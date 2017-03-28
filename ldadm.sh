@@ -1,10 +1,12 @@
 _ldadm() {
 	local CUR="${COMP_WORDS[COMP_CWORD]}"
+	local COMMAND='LOG_LEVEL=CRITICAL ldadm'
 	local KWD_OBJECTS="user list unit"
 	local KWD_SUSPENDED="--suspended"
 	local KWD_LOGLEVEL="--loglevel"
 	local KWD_DEFAULTS="--defaults"
 	local KWD_FILE="--file"
+	local KWD_FULL="--full"
 	local OBJ_START
 	local PREV
 	local REPLY
@@ -44,11 +46,15 @@ __ldadm_complete_default() {
 
 # list active or suspended users
 __ldadm_list_users() {
+	local CMDLINE="$COMMAND user list"
 	if [[ $1 = "suspended" ]]; then
-		eval "ldadm user list $KWD_SUSPENDED"
-	else
-		ldadm user list
+		CMDLINE="$CMDLINE $KWD_SUSPENDED"
 	fi
+	eval "$CMDLINE"
+}
+
+__ldadm_list_units() {
+	eval "$COMMAND unit list"
 }
 
 # complete user commands
@@ -143,7 +149,18 @@ __ldadm_complete_unit() {
 	let COMP_CWORD=(COMP_CWORD - OBJ_START + 1)
 
 	case "${COMP_WORDS[OBJ_START + 1]}" in
-		list)
+		list) ;;
+		show|info)
+			case "$COMP_CWORD" in
+				3)
+					case "$CUR" in
+						-*) REPLY="$KWD_FULL" ;;
+						*)  REPLY="$KWD_FULL $(__ldadm_list_units)" ;;
+					esac
+					;;
+				4)
+					REPLY="$(__ldadm_list_units)" ;;
+			esac
 			;;
 		*)
 			REPLY="list show info assign add create delete remove"
