@@ -22,8 +22,8 @@ class Config:
         except KeyError:
             filename = os.path.join(os.environ["HOME"], ".config", basename)
 
+        logging.getLogger(__name__).debug("Loading config from %s" % filename)
         try:
-            logging.debug("Loading config from %s" % filename)
             __class__._cfg = yaml.safe_load(open(filename))
             self._cfg = __class__._cfg
         except OSError as err:
