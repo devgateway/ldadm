@@ -18,8 +18,9 @@
 
 ### Unit commands
 
-	ldadm unit {list|add}
+	ldadm unit list
 	ldadm unit show [--full] UNIT
+	ldadm unit add [--parent PARENT_UNIT]
 	ldadm unit delete UNIT
 	ldadm unit assign UNIT [USER_NAME…]
 
@@ -138,9 +139,9 @@ List user IDs belonging to a unit. If `--full` argument is given, a subtree sear
 
 ### Creating a new unit
 
-	ldadm unit add
+	ldadm unit add [--parent PARENT_UNIT]
 
-Add a new unit, prompting the user for required attributes.
+Add a new unit, prompting the user for required attributes. If `--parent` argument is given, create the new one nested under that unit.
 
 ### Deleting a unit
 
