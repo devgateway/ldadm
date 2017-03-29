@@ -142,6 +142,12 @@ __ldadm_complete_unit() {
 			esac
 			;;
 		delete|remove) REPLY="$(__ldadm_list_units)" ;;
+		assign)
+			case "$COMP_CWORD" in
+				3) REPLY="$(__ldadm_list_units)" ;;
+				*) REPLY="$(__ldadm_list_users)" ;;
+			esac
+			;;
 		*)
 			REPLY="list show info assign add create delete remove"
 			;;

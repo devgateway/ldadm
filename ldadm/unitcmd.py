@@ -67,3 +67,11 @@ class UnitCommand(Command):
             units.commit_delete()
         except LDAPNotAllowedOnNotLeafResult as err:
             raise RuntimeError("One or more units not empty") from err
+
+    def on_assign(self):
+        unit_name = self._args.unit
+        unit_dn = self._get_unit(unit_name).entry_dn
+
+        usernames = list(self._args_or_stdin("username"))
+        users = UserMapping(base = __class__.__base, limit = usernames)
+        users.move_all(unit_dn)
