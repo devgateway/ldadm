@@ -30,7 +30,7 @@ class LdapObjectMapping(MutableMapping):
         self._base = base
         self._attrs = attrs
         self._sub_tree = sub_tree
-        self.__queue = []
+        self.__queue = set()
 
         if not limit:
             self._default_query = ""
@@ -39,7 +39,7 @@ class LdapObjectMapping(MutableMapping):
         else:
             try:
                 self._default_query = self.__class__._build_query(limit)
-                self.__queue = list(limit)
+                self.__queue = set(limit)
             except TypeError as err:
                 raise TypeError("limit must be a string or list of IDs") from err
 
@@ -62,10 +62,10 @@ class LdapObjectMapping(MutableMapping):
 
         return "+".join( map(lambda key_val: "%s=%s" % key_val, new_rdn) )
 
-    def _get_reader(self, ids = None):
+    def _get_reader(self, ids = []):
         if ids:
             query = self.__class__._build_query(ids)
-            self.__queue = list(ids)
+            self.__queue = set(ids)
         else:
             query = self._default_query
 
@@ -76,7 +76,7 @@ class LdapObjectMapping(MutableMapping):
                 object_def = self.__class__._object_def,
                 sub_tree = self._sub_tree)
 
-    def _get_writer(self, ids = None):
+    def _get_writer(self, ids = []):
         attrs = self.__class__._attribute
         reader = self._get_reader(ids)
         reader.search(attrs)
@@ -128,10 +128,7 @@ class LdapObjectMapping(MutableMapping):
                 attributes = attr)
         for entry in results:
             id = entry[attr].value
-            try:
-                self.__queue.remove(id)
-            except ValueError:
-                pass
+            self.__queue.discard(id)
             yield id
 
         if self.__queue:
@@ -157,7 +154,7 @@ class LdapObjectMapping(MutableMapping):
         entry.entry_commit_changes(refresh = False)
 
     def __delitem__(self, id):
-        self.__queue.append(id)
+        self.__queue.add(id)
 
     def commit_delete(self):
         attr = self.__class__._attribute
