@@ -15,11 +15,13 @@ log = logging.getLogger(__name__)
 
 class LdapObject:
     _object_def = None
+    _config_node = None
+    _object_class = None
 
-    def __init__(self, config_node, reference_object, handlers = []):
+    def __init__(self, reference_object = None, handlers = []):
         self._handlers = handlers
-        self._templates = self._read_templates(config_node)
-        self._modifiers = self._read_modifiers(config_node)
+        self._templates = self._read_templates()
+        self._modifiers = self._read_modifiers()
         self.attrs = CaseInsensitiveWithAliasDict()
         self.message = ""
         self._required_attrs = []
@@ -27,8 +29,11 @@ class LdapObject:
 
         # resolve a message that will be output
         try:
+            node = self.__class__._config_node
+            if not node:
+                raise ConfigAttrError()
             log.debug("Attempting to format creation message")
-            message_template = config_node.message_on_create
+            message_template = node.message_on_create
             while True: # failure is not an option
                 try:
                     self.message = message_template.format_map(self.attrs)
@@ -48,18 +53,21 @@ class LdapObject:
             key = attr_def.key
             if key in self._templates or key in self._required_attrs or attr_def.mandatory:
                 if key.lower() == "objectclass":
-                    self.attrs[key] = config_node.objectclass
+                    self.attrs[key] = self.__class__._object_class
                 else:
                     self._resolve_attribute(key)
 
-    def _read_modifiers(self, config_node):
+    def _read_modifiers(self):
         """Read from config how to modify string(s) of the default value"""
 
         result = CaseInsensitiveWithAliasDict()
         safe_modifiers = ['capitalize', 'casefold', 'lower', 'swapcase', 'title', 'upper']
 
         try:
-            modifiers = config_node.attr.modify.__dict__["_cfg"]
+            node = self.__class__._config_node
+            if not node:
+                raise ConfigAttrError()
+            modifiers = node.attr.modify.__dict__["_cfg"]
             # read key, value from config; get aliases from schema
             for raw_name, value in modifiers.items():
                 if value not in safe_modifiers:
@@ -74,13 +82,16 @@ class LdapObject:
 
         return result
 
-    def _read_templates(self, config_node):
+    def _read_templates(self):
         """Read format strings from config to use as default values for attributes"""
 
         result = CaseInsensitiveWithAliasDict()
 
         try:
-            templates = config_node.attr.templates.__dict__["_cfg"]
+            node = self.__class__._config_node
+            if not node:
+                raise ConfigAttrError()
+            templates = node.attr.templates.__dict__["_cfg"]
             # read key, value from config; get aliases from schema
             for raw_name, value in templates.items():
                 attr_names = self._canonicalize_name(raw_name)
@@ -214,9 +225,11 @@ class LdapObject:
         return repr(self.attrs)
 
 class User(LdapObject):
-    _object_def = ObjectDef(
-            object_class = cfg.user.objectclass,
-            schema = ldap)
+    _config_node = cfg.user
+    _object_class = cfg.user.objectclass
+    # Load attribute definitions by ObjectClass
+    _object_def = ObjectDef(object_class = _object_class, schema = ldap)
+
 
     @staticmethod
     def make_password(*args_ignored):
@@ -238,11 +251,16 @@ class User(LdapObject):
 
         return ''.join(chars)
 
-    def __init__(self, config_node, reference_object = None, handlers = []):
-        self._required_attrs = [ self._canonicalize_name(config_node.attr.passwd)[0] ]
-        super().__init__(config_node, reference_object, handlers)
+    def __init__(self, reference_object = None, handlers = []):
+        self._required_attrs = [ self._canonicalize_name(cfg.user.attr.passwd)[0] ]
+        super().__init__(cfg.user, reference_object, handlers)
 
 class Unit(LdapObject):
-    _object_def = ObjectDef(
-            object_class = "organizationalUnit",
-            schema = ldap)
+    try:
+        _config_node = cfg.unit
+    except ConfigAttrError:
+        _config_node = None
+
+    _object_class = "organizationalUnit"
+    # Load attribute definitions by ObjectClass
+    _object_def = ObjectDef(object_class = _object_class, schema = ldap)

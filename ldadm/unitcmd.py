@@ -7,6 +7,7 @@ from ldap3.utils.dn import escape_attribute_value, safe_dn
 from .command import Command
 from .collections import UnitMapping, UserMapping, MissingObjects
 from .config import cfg
+from .objects import Unit
 
 log = logging.getLogger(__name__)
 
@@ -39,3 +40,11 @@ class UnitCommand(Command):
             print(uid)
 
     def on_add(self):
+        base = __class__.__base # TODO: other bases
+        unit = Unit()
+        ou = unit.attrs[UnitMapping._attribute]
+        subunits = UnitMapping(base = base)
+        subunits[ou] = unit.attrs
+
+        if unit.message:
+            print(unit.message)

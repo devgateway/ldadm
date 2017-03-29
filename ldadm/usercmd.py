@@ -120,7 +120,7 @@ class UserCommand(Command):
             raise RuntimeError(msg) from err
 
     def on_add(self):
-        uid_attr_name = cfg.user.attr.uid
+        uid_attr_name = UserMapping._attribute
         base = cfg.user.base.active
 
         # Get default values from a reference object
@@ -135,10 +135,7 @@ class UserCommand(Command):
                 cfg.user.attr.passwd: User.make_password
                 }
 
-        user = User(
-                config_node = cfg.user,
-                reference_object = source_obj,
-                handlers = handlers)
+        user = User(reference_object = source_obj, handlers = handlers)
 
         # Write the object to LDAP
         uid = user.attrs[uid_attr_name]
