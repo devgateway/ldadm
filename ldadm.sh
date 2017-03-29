@@ -7,6 +7,7 @@ _ldadm() {
 	local KWD_DEFAULTS="--defaults"
 	local KWD_FILE="--file"
 	local KWD_FULL="--full"
+	local KWD_PARENT="--parent"
 	local OBJ_START
 	local PREV
 	local REPLY
@@ -149,7 +150,13 @@ __ldadm_complete_unit() {
 	let COMP_CWORD=(COMP_CWORD - OBJ_START + 1)
 
 	case "${COMP_WORDS[OBJ_START + 1]}" in
-		list|add) ;;
+		list) ;;
+		add)
+			case "$COMP_CWORD" in
+				3) REPLY="$KWD_PARENT" ;;
+				4) REPLY="$(__ldadm_list_units)" ;;
+			esac
+			;;
 		show|info)
 			case "$COMP_CWORD" in
 				3)

@@ -202,6 +202,12 @@ _parsers = {
                 "kwargs": {
                     "aliases": ["create"],
                     "help": "Add an organizational unit"
+                },
+                "arguments": {
+                    "--parent": {
+                        "metavar": "PARENT_UNIT",
+                        "help": "Create nested in this unit"
+                    }
                 }
             },
             "delete": {

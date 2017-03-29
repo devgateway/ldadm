@@ -40,7 +40,13 @@ class UnitCommand(Command):
             print(uid)
 
     def on_add(self):
-        base = __class__.__base # TODO: other bases
+        parent_name = self._args.parent
+        if parent_name:
+            parent = self._get_unit(parent_name)
+            base = parent.entry_dn
+        else:
+            base = __class__.__base
+
         unit = Unit()
         ou = unit.attrs[UnitMapping._attribute]
         subunits = UnitMapping(base = base)
