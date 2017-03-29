@@ -1,8 +1,7 @@
 import logging
 
-from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, LDAPKeyError
-from ldap3.core.exceptions import LDAPAttributeOrValueExistsResult
-from ldap3.utils.dn import escape_attribute_value, safe_dn
+from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, LDAPKeyError, \
+        LDAPAttributeOrValueExistsResult
 
 from .command import Command
 from .collections import UnitMapping, UserMapping, MissingObjects
