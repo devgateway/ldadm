@@ -1,7 +1,7 @@
 import logging
 
 from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, LDAPKeyError, \
-        LDAPAttributeOrValueExistsResult
+        LDAPAttributeOrValueExistsResult, LDAPNotAllowedOnNotLeafResult
 
 from .command import Command
 from .collections import UnitMapping, UserMapping, MissingObjects
@@ -53,3 +53,17 @@ class UnitCommand(Command):
 
         if unit.message:
             print(unit.message)
+
+    def on_delete(self):
+        unit_names = list(self._args_or_stdin("unit"))
+        if not unit_names:
+            return
+
+        units = UnitMapping(base = __class__.__base, limit = unit_names)
+        for name in unit_names:
+            del units[name]
+
+        try:
+            units.commit_delete()
+        except LDAPNotAllowedOnNotLeafResult as err:
+            raise RuntimeError("One or more units not empty") from err
