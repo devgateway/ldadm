@@ -141,6 +141,7 @@ __ldadm_complete_unit() {
 					REPLY="$(__ldadm_list_units)" ;;
 			esac
 			;;
+		delete|remove) REPLY="$(__ldadm_list_units)" ;;
 		*)
 			REPLY="list show info assign add create delete remove"
 			;;
