@@ -108,6 +108,17 @@ _parsers = {
                     }
                 }
             },
+            "passwd": {
+                "kwargs": {
+                    "help": "Reset user password"
+                },
+                "arguments": {
+                    "username": {
+                        "metavar": "USERNAME",
+                        "help": "User ID"
+                    }
+                }
+            },
             "rename": {
                 "kwargs": {
                     "help": "Change account UID"

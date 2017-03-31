@@ -74,7 +74,7 @@ __ldadm_complete_user() {
 				4) REPLY="$(__ldadm_list_users suspended) $(__ldadm_list_users)" ;;
 			esac
 			;;
-		rename)
+		rename|passwd)
 			if [[ $COMP_CWORD -eq 3 ]]; then
 				REPLY="$(__ldadm_list_users)"
 			fi
@@ -108,7 +108,7 @@ __ldadm_complete_user() {
 			;;
 		*)
 			REPLY="list search find show info suspend ban lock disable restore
-			unban enable delete remove add create rename key"
+			unban enable delete remove add create rename key passwd"
 			;;
 	esac
 	COMPREPLY=($(compgen -W "$REPLY" -- $CUR))

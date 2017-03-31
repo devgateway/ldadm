@@ -155,6 +155,17 @@ class UserCommand(Command):
         except MissingObjects as err:
             raise RuntimeError("User %s not found" % username) from err
 
+    def on_passwd(self):
+        username = self._args.username
+        passwd_attr = cfg.user.attr.passwd
+        user = self._get_user(username).entry_writable()
+        password = User.make_password()
+
+        setattr(user, passwd_attr, password)
+        user.entry_commit_changes(refresh = False)
+
+        print(password)
+
     def on_key_list(self):
         username = self._args.username
 
