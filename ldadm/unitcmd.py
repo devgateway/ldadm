@@ -22,12 +22,12 @@ class UnitCommand(Command):
         except MissingObjects as err:
             raise RuntimeError("Unit %s not found" % unit_name) from err
 
-    def on_list(self):
+    def on_unit_list(self):
         units = UnitMapping(base = __class__.__base)
         for name in units.keys():
             print(name)
 
-    def on_show(self):
+    def on_unit_show(self):
         unit_name = self._args.unit
         sub_tree = self._args.full
 
@@ -38,7 +38,7 @@ class UnitCommand(Command):
         for uid in users.keys():
             print(uid)
 
-    def on_add(self):
+    def on_unit_add(self):
         parent_name = self._args.parent
         if parent_name:
             parent = self._get_unit(parent_name)
@@ -54,7 +54,7 @@ class UnitCommand(Command):
         if unit.message:
             print(unit.message)
 
-    def on_delete(self):
+    def on_unit_delete(self):
         unit_names = list(self._args_or_stdin("unit"))
         if not unit_names:
             return
@@ -68,7 +68,7 @@ class UnitCommand(Command):
         except LDAPNotAllowedOnNotLeafResult as err:
             raise RuntimeError("One or more units not empty") from err
 
-    def on_assign(self):
+    def on_unit_assign(self):
         unit_name = self._args.unit
         unit_dn = self._get_unit(unit_name).entry_dn
 

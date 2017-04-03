@@ -69,13 +69,13 @@ class UserCommand(Command):
         for uid in users.keys():
             print(uid)
 
-    def on_list(self):
+    def on_user_list(self):
         self._list_users()
 
-    def on_search(self):
+    def on_user_search(self):
         self._list_users(limit = self._args.filter)
 
-    def on_show(self):
+    def on_user_show(self):
         usernames = list(self._args_or_stdin("username"))
         if self._args.suspended:
             base = cfg.user.base.suspended
@@ -90,15 +90,15 @@ class UserCommand(Command):
         except MissingObjects as err:
             raise RuntimeError("Users not found: " + ", ".join(err.items))
 
-    def on_suspend(self):
+    def on_user_suspend(self):
         usernames = list(self._args_or_stdin("username"))
         self._set_active(usernames, active = False)
 
-    def on_restore(self):
+    def on_user_restore(self):
         usernames = list(self._args_or_stdin("username"))
         self._set_active(usernames, active = True)
 
-    def on_delete(self):
+    def on_user_delete(self):
         usernames = list(self._args_or_stdin("username"))
         if not usernames:
             return
@@ -109,7 +109,7 @@ class UserCommand(Command):
 
         users.commit_delete()
 
-    def on_rename(self):
+    def on_user_rename(self):
         base = cfg.user.base.active
 
         users = UserMapping(base = base)
@@ -119,7 +119,7 @@ class UserCommand(Command):
             msg = "User '%s' already exists" % self._args.newname
             raise RuntimeError(msg) from err
 
-    def on_add(self):
+    def on_user_add(self):
         uid_attr_name = UserMapping._attribute
         base = cfg.user.base.active
 
@@ -155,7 +155,7 @@ class UserCommand(Command):
         except MissingObjects as err:
             raise RuntimeError("User %s not found" % username) from err
 
-    def on_passwd(self):
+    def on_user_passwd(self):
         username = self._args.username
         passwd_attr = cfg.user.attr.passwd
         user = self._get_user(username).entry_writable()
@@ -166,7 +166,7 @@ class UserCommand(Command):
 
         print(password)
 
-    def on_key_list(self):
+    def on_user_key_list(self):
         username = self._args.username
 
         def get_keys():
@@ -206,7 +206,7 @@ class UserCommand(Command):
 
             print(output)
 
-    def on_key_add(self):
+    def on_user_key_add(self):
         username = self._args.username
 
         # get the writable entry
@@ -230,7 +230,7 @@ class UserCommand(Command):
         except LDAPAttributeOrValueExistsResult as err:
             raise RuntimeError("Key already exists") from err
 
-    def on_key_delete(self):
+    def on_user_key_delete(self):
         username = self._args.username
         re_md5 = re.compile(r"([0-9A-Fa-f]{2}.?){15}[0-9A-Fa-f]{2}$")
 

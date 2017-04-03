@@ -248,7 +248,7 @@ _parsers = {
 }
 
 def get_args():
-    def gen_parser(parent, parser_name, options):
+    def gen_parser(parent, parent_name, parser_name, options):
         if "kwargs" in options:
             kwargs = options["kwargs"]
         else:
@@ -263,7 +263,7 @@ def get_args():
                 kwargs = {key: value}
                 parser.set_defaults(**kwargs)
 
-        parser.set_defaults(_event = "on_" + parser_name)
+        parser.set_defaults(_event = "on_" + parent_name + parser_name)
 
         if "arguments" in options:
             for arg, kwargs in options["arguments"].items():
@@ -275,7 +275,8 @@ def get_args():
             subparsers = parser.add_subparsers(title = title)
             for subparser_name, subparser_opts in options["subparsers"].items():
                 log.debug("%s.add_subparser %s" % (parser_name, subparser_name))
-                gen_parser(subparsers, subparser_name, subparser_opts)
+                new_name = parent_name + parser_name + "_"
+                gen_parser(subparsers, new_name, subparser_name, subparser_opts)
 
     ap = argparse.ArgumentParser(description = "Manage LDAP accounts")
 
@@ -283,7 +284,7 @@ def get_args():
     subcommands.required = True
 
     for name, options in _parsers.items():
-        gen_parser(subcommands, name, options)
+        gen_parser(subcommands, "", name, options)
 
     args = ap.parse_args()
     return args
