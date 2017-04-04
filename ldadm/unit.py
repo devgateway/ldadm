@@ -13,7 +13,8 @@ log = logging.getLogger(__name__)
 
 class UnitCommand(Command):
     __base = cfg.user.base.active
-    args = {
+    parser_name = "unit"
+    parser_args = {
         "kwargs": {
             "help": "Organizational units"
         },

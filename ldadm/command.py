@@ -25,9 +25,12 @@ class Command:
                     yield line[:-1] # in text mode linesep is always "\n"
 
     @classmethod
-    def add_subparser(cls, parent, full_name, options = None):
+    def add_subparser(cls, parent, full_name = [], options = None):
         if options is None:
-            options = cls.args
+            options = cls.parser_args
+
+        if not full_name:
+            full_name = [cls.parser_name]
 
         this_name = full_name[-1]
 
@@ -47,7 +50,7 @@ class Command:
             arguments = options["arguments"]
         except KeyError:
             arguments = {}
-        for arg, kwargs in options["arguments"].items():
+        for arg, kwargs in arguments.items():
             log.debug("%s.add_argument %s" % (this_name, arg))
             parser.add_argument(arg, **kwargs)
 
@@ -55,8 +58,8 @@ class Command:
             child_name = copy(full_name)
             title = options["subparsers_title"]
             new_parent = parser.add_subparsers(title = title)
-            for child_name, child_options in options["subparsers"].items():
-                log.debug("%s.add_subparser %s" % (this_name, child_name))
-                child_name.append(child_name)
+            for name, child_options in options["subparsers"].items():
+                log.debug("%s.add_subparser %s" % (this_name, name))
+                child_name.append(name)
                 cls.add_subparser(new_parent, child_name, child_options)
                 child_name.pop()

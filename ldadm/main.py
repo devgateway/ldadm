@@ -1,5 +1,8 @@
 #!/usr/bin/python3
-import logging, sys, importlib, os, argparse
+import logging, sys, os, argparse, inspect
+from importlib import import_module
+
+from .command import Command
 
 log = None
 
@@ -29,10 +32,15 @@ def main():
     subcommands = ap.add_subparsers(description = "Objects to manage", dest = "subcommand")
     subcommands.required = True
 
-    for name, options in _parsers.items():
-        add_parser(subcommands, "", name, options)
+    command_modules = ["user", "unit"]
+    for module_name in command_modules:
+        module = import_module("." + module_name, "ldadm")
+        for name, cls in inspect.getmembers(module, inspect.isclass):
+            if cls is not Command and issubclass(cls, Command):
+                cls.add_subparser(subcommands)
 
     args = ap.parse_args()
+    sys.exit("DEBUG")
 
     log.debug("Invoking %s.%s" % (args._class, args._event))
     try:

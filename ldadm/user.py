@@ -16,7 +16,8 @@ from .parsers import only_suspended, multi_user, single_user
 log = logging.getLogger(__name__)
 
 class UserCommand(Command):
-    args = {
+    parser_name = "user"
+    parser_args = {
         "kwargs": {
             "help": "User accounts"
         },
