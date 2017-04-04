@@ -43,9 +43,8 @@ class Command:
         parser = parent.add_parser(this_name, **kwargs)
 
         event_name = "on_" + "_".join(full_name)
+        parser.set_defaults(_class = cls)
         parser.set_defaults(_event = event_name)
-        parser.set_defaults(_class = cls.__name__)
-        parser.set_defaults(_module = cls.__module__)
 
         try:
             arguments = options["arguments"]

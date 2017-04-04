@@ -40,11 +40,10 @@ def main():
                 cls.add_subparser(subcommands)
 
     args = ap.parse_args()
-    sys.exit("DEBUG")
 
-    log.debug("Invoking %s.%s" % (args._class, args._event))
+    log.debug("Invoking %s.%s" % (args._class.__name__, args._event))
     try:
-        command_instance = getattr(commands, args._class)(args)
+        command_instance = args._class(args)
         handler = getattr(command_instance, args._event)
         handler()
     except Exception as e:
