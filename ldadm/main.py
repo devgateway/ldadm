@@ -1,7 +1,5 @@
 #!/usr/bin/python3
-import logging, sys, importlib, os
-
-from .argparse import get_args
+import logging, sys, importlib, os, argparse
 
 log = None
 
@@ -26,11 +24,18 @@ def _set_log_level():
 def main():
     _set_log_level()
 
-    args = get_args()
+    ap = argparse.ArgumentParser(description = "Manage LDAP accounts")
+
+    subcommands = ap.add_subparsers(description = "Objects to manage", dest = "subcommand")
+    subcommands.required = True
+
+    for name, options in _parsers.items():
+        add_parser(subcommands, "", name, options)
+
+    args = ap.parse_args()
 
     log.debug("Invoking %s.%s" % (args._class, args._event))
     try:
-        commands = importlib.import_module("." + args._module, "ldadm")
         command_instance = getattr(commands, args._class)(args)
         handler = getattr(command_instance, args._event)
         handler()
