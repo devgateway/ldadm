@@ -278,13 +278,13 @@ class UserCommand(Command):
         else:
             source_obj = None
 
-        handlers = {
+        pre = {
                 cfg.user.attr.nuid: self._get_unique_id_number,
                 cfg.user.attr.uid: self._uid_unique,
                 cfg.user.attr.passwd: User.make_password
                 }
 
-        user = User(reference_object = source_obj, handlers = handlers)
+        user = User(reference_object = source_obj, pre = pre)
 
         # Write the object to LDAP
         uid = user.attrs[uid_attr_name]

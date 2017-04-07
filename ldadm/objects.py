@@ -18,8 +18,9 @@ class LdapObject:
     _config_node = None
     _object_class = None
 
-    def __init__(self, reference_object = None, handlers = []):
-        self._handlers = handlers
+    def __init__(self, reference_object = None, pre = [], post = []):
+        self._callbacks_pre = pre
+        self._callbacks_post = post
         self._templates = self._read_templates()
         self._modifiers = self._read_modifiers()
         self.attrs = CaseInsensitiveWithAliasDict()
@@ -176,11 +177,11 @@ class LdapObject:
             default = None
 
         # indirectly apply callbacks: give them current default, receive new default
-        if key in self._handlers:
-            handler = self._handlers[key]
+        if key in self._callbacks_pre:
+            callback = self._callbacks_pre[key]
             try:
-                log.debug("Calling handler %s" % key)
-                default = handler(default)
+                log.debug("Calling %s before prompt" % key)
+                default = callback(default)
             except Exception as err:
                 # the callback failed; resort to user input
                 log.warn(err)
@@ -198,28 +199,56 @@ class LdapObject:
         else:
             prompt = "%s: " % key
 
-        response = input_stderr(prompt)
+        while True:
+            response = input_stderr(prompt)
 
-        if response == ".":
-            pass # dot entered, delete this attribute
-        elif not response:
-            if default:
+            if response == ".":
+                break # dot entered, delete this attribute
+            elif not response:
                 # use default if possible
-                self.attrs[names] = default
-            else:
-                # require input from user
-                while not response:
+                result = default if default else None
+
+                # indirectly apply callbacks
+                try:
+                    callback = self._callbacks_post[key]
+                    log.debug("Calling %s after prompt" % key)
+                    result = callback(result)
+                except KeyError: # no callback set
+                    pass
+                except Exception as err:
+                    # the callback failed; require user input again
+                    log.error(err)
+                    continue
+
+                if result:
+                    self.attrs[names] = response
+                    break
+                else:
                     log.error("%s requires a value" % key)
-                    response = input_stderr(prompt)
-                self.attrs[names] = response
-        else:
-            # try to split string into a list
-            matches = re.split(r'\s*;\s+', response)
-            if len(matches) == 1:
-                self.attrs[names] = response # seems to be a single value
+                    continue
+
             else:
-                log.debug("Adding list %s" % repr(matches))
-                self.attrs[names] = matches
+                # try to split string into a list
+                matches = re.split(r'\s*;\s+', response)
+                if len(matches) == 1:
+                    result = response # seems to be a single value
+                else:
+                    log.debug("Adding list %s" % repr(matches))
+                    result = matches
+
+                try:
+                    callback = self._callbacks_post[key]
+                    log.debug("Calling %s after prompt" % key)
+                    result = callback(result)
+                except KeyError:
+                    pass # no callback set
+                except Exception as err:
+                    # the callback failed; require user input again
+                    log.error(err)
+                    continue
+
+                self.attrs[names] = result
+                break
 
     def __repr__(self):
         return repr(self.attrs)
@@ -251,9 +280,9 @@ class User(LdapObject):
 
         return ''.join(chars)
 
-    def __init__(self, reference_object = None, handlers = []):
+    def __init__(self, reference_object = None, pre = []):
         self._required_attrs = [ self._canonicalize_name(cfg.user.attr.passwd)[0] ]
-        super().__init__(cfg.user, reference_object, handlers)
+        super().__init__(cfg.user, reference_object, pre)
 
 class Unit(LdapObject):
     try:
