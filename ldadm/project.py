@@ -121,5 +121,5 @@ class ProjectCommand(Command):
 
         try:
             projects.commit_delete()
-        except LDAPNotAllowedOnNotLeafResult as err:
-            raise RuntimeError("One or more projects not empty") from err
+        except MissingObjects as err:
+            raise RuntimeError("Projects not found: " + ", ".join(err.items))
