@@ -2,12 +2,14 @@ import logging
 
 from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, LDAPKeyError, \
         LDAPAttributeOrValueExistsResult
+from ldap3 import ALL_ATTRIBUTES
 
 from .command import Command
 from .collections import ProjectMapping, UserMapping, MissingObjects
 from .config import cfg
 from .objects import Project
 from .parsers import single_user, multi_user, single_project, multi_project
+from .console import pretty_print
 
 log = logging.getLogger(__name__)
 
@@ -84,7 +86,7 @@ class ProjectCommand(Command):
 
     def on_project_show(self):
         project_names = list(self._args_or_stdin("project"))
-        projects = ProjectMapping(base = base, limit = project_names, attrs = ALL_ATTRIBUTES)
+        projects = ProjectMapping(limit = project_names, attrs = ALL_ATTRIBUTES)
         try:
             for project_entry in projects:
                 pretty_print(project_entry)
