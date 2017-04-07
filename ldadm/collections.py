@@ -9,7 +9,7 @@ from ldap3 import ALL_ATTRIBUTES, ObjectDef, Reader, Writer
 
 from .config import cfg
 from .connection import ldap
-from .objects import User, Unit
+from .objects import User, Unit, Project
 
 log = logging.getLogger(__name__)
 
@@ -215,3 +215,8 @@ class UserMapping(LdapObjectMapping):
 class UnitMapping(LdapObjectMapping):
     _attribute = "organizationalUnitName"
     _object_def = Unit._object_def
+
+class ProjectMapping(LdapObjectMapping):
+    _base = cfg.project.base
+    _attribute = cfg.project.attr.id
+    _object_def = Project._object_def
