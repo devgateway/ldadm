@@ -70,8 +70,8 @@ class ProjectCommand(Command):
         }
     }
 
-    def _get_project(self, project_name):
-        projects = ProjectMapping(limit = [project_name])
+    def _get_project(self, project_name, attrs = None):
+        projects = ProjectMapping(limit = [project_name], attrs = attrs)
 
         try:
             project_list = [p for p in projects]
@@ -150,3 +150,20 @@ class ProjectCommand(Command):
             projects.commit_delete()
         except MissingObjects as err:
             raise RuntimeError("Projects not found: " + ", ".join(err.items))
+
+    def on_project_assign(self):
+        project_name = self._args.project
+        attr_name = cfg.project.attr.member
+
+        project = self._get_project(project_name, attr_name).entry_writable()
+        members = project[attr_name]
+
+        usernames = list(self._args_or_stdin("username"))
+        users = UserMapping(base = cfg.user.base.active, limit = usernames)
+        new_members = self._get_dns( list(users.keys()) )
+        members += new_members
+
+        try:
+            project.entry_commit_changes(refresh = False)
+        except LDAPAttributeOrValueExistsResult as err:
+            raise RuntimeError("One or more users already assigned to this project") from err
