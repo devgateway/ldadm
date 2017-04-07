@@ -23,11 +23,14 @@ class MissingObjects(Exception):
 class LdapObjectMapping(MutableMapping):
     _attribute = None
 
-    def __init__(self, base, sub_tree = True, limit = None, attrs = None):
+    def __init__(self, base = None, sub_tree = True, limit = None, attrs = None):
         if not self.__class__._attribute:
             raise ValueError("Primary attribute must be defined")
 
-        self._base = base
+        if base is None:
+            self._base = self.__class__._base
+        else:
+            self._base = base
         self._attrs = attrs
         self._sub_tree = sub_tree
         self.__queue = set()
