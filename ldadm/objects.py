@@ -6,6 +6,7 @@ except ImportError:
 
 from ldap3.utils.ciDict import CaseInsensitiveWithAliasDict
 from ldap3 import ObjectDef
+from ldap3.core.exceptions import LDAPKeyError
 
 from .config import cfg, ConfigAttrError
 from .console import input_stderr
@@ -18,7 +19,7 @@ class LdapObject:
     _config_node = None
     _object_class = None
 
-    def __init__(self, reference_object = None, pre = [], post = []):
+    def __init__(self, reference_object = None, pre = {}, post = {}):
         self._callbacks_pre = pre
         self._callbacks_post = post
         self._templates = self._read_templates()
@@ -170,7 +171,7 @@ class LdapObject:
             # if a reference entry is given, take default value from there
             try:
                 default = self._reference[key]
-            except ldap3.core.exceptions.LDAPKeyError:
+            except LDAPKeyError:
                 pass # unless there's no such attribute in the reference
 
         else:
@@ -280,9 +281,9 @@ class User(LdapObject):
 
         return ''.join(chars)
 
-    def __init__(self, reference_object = None, pre = []):
+    def __init__(self, reference_object = None, pre = {}, post = {}):
         self._required_attrs = [ self._canonicalize_name(cfg.user.attr.passwd)[0] ]
-        super().__init__(cfg.user, reference_object, pre)
+        super().__init__(reference_object = reference_object, pre = pre, post = post)
 
 class Unit(LdapObject):
     try:
