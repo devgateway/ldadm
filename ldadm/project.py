@@ -79,11 +79,11 @@ class ProjectCommand(Command):
         except MissingObjects as err:
             raise RuntimeError("Project %s not found" % project_name) from err
 
-    def _get_dn(self, name):
-        if type(name) is list:
-            limit = name
+    def _get_dns(self, names):
+        if type(names) is list:
+            limit = names
         else:
-            limit = [name]
+            limit = [names]
 
         users = UserMapping(base = cfg.user.base.active, limit = limit)
 
@@ -97,7 +97,7 @@ class ProjectCommand(Command):
                 msg = "Unknown users or servers: " + ", ".join(err.items)
                 raise RuntimeError(msg) from err
 
-        if type(name) is list:
+        if type(names) is list:
             return results
         else:
             return results[0]
@@ -126,8 +126,8 @@ class ProjectCommand(Command):
             source_obj = None
 
         post = {
-                cfg.project.attr.manager: self._get_dn,
-                cfg.project.attr.member: self._get_dn
+                cfg.project.attr.manager: self._get_dns,
+                cfg.project.attr.member: self._get_dns
                 }
         project = Project(reference_object = source_obj, post = post)
         id = project.attrs[attr_name]
