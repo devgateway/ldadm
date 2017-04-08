@@ -18,12 +18,12 @@ class MissingObjects(Exception):
         self.items = items
 
     def __str__(self):
-        return "Objects not found: " + ", ".join(self.items)
+        return "Objects not found: " + ", ".join(list(self.items))
 
 class LdapObjectMapping(MutableMapping):
     _attribute = None
 
-    def __init__(self, base = None, sub_tree = True, limit = None, attrs = None):
+    def __init__(self, base = None, sub_tree = True, attrs = None):
         if not self.__class__._attribute:
             raise ValueError("Primary attribute must be defined")
 
@@ -31,24 +31,25 @@ class LdapObjectMapping(MutableMapping):
             self._base = self.__class__._base
         else:
             self._base = base
+
         self._attrs = attrs
         self._sub_tree = sub_tree
+        self._ids = None
+        self._filter = ""
+
         self.__queue = set()
 
-        if not limit:
-            self._default_query = ""
-        elif type(limit) is str:
-            self._default_query = limit
+    def select(self, criteria):
+        if type(criteria) is list:
+            self._ids = set(criteria)
+            self._filter = ""
+        elif type(criteria) is str:
+            self._ids = None
+            self._filter = criteria
         else:
-            try:
-                self._default_query = self.__class__._build_query(limit)
-                self.__queue = set(limit)
-            except TypeError as err:
-                raise TypeError("limit must be a string or list of IDs") from err
+            raise TypeError("Select criteria must be a string or list of IDs")
 
-    @classmethod
-    def _build_query(cls, ids):
-        return "%s: %s" % ( cls._attribute, ";".join(list(ids)) )
+        return self
 
     @classmethod
     def _make_rdn(cls, entry, new_val):
@@ -67,10 +68,9 @@ class LdapObjectMapping(MutableMapping):
 
     def _get_reader(self, ids = []):
         if ids:
-            query = self.__class__._build_query(ids)
-            self.__queue = set(ids)
+            query = self.__class__._attribute + ": " + ";".join(list(self._ids))
         else:
-            query = self._default_query
+            query = self._filter
 
         return Reader(
                 connection = ldap,
@@ -111,17 +111,15 @@ class LdapObjectMapping(MutableMapping):
         results = reader.search_paged(
                 paged_size = cfg.ldap.paged_search_size,
                 attributes = requested_attrs)
+        found = set()
         for entry in results:
             id = entry[attr].value
-            try:
-                self.__queue.remove(id)
-            except ValueError:
-                pass
-
+            found.add(id)
             yield entry
 
-        if self.__queue:
-            raise MissingObjects(self.__queue)
+        not_found = self._ids - found
+        if not_found:
+            raise MissingObjects(not_found)
 
     def keys(self):
         attr = self.__class__._attribute
@@ -129,13 +127,15 @@ class LdapObjectMapping(MutableMapping):
         results = reader.search_paged(
                 paged_size = cfg.ldap.paged_search_size,
                 attributes = attr)
+        found = set()
         for entry in results:
             id = entry[attr].value
-            self.__queue.discard(id)
+            found.add(id)
             yield id
 
-        if self.__queue:
-            raise MissingObjects(self.__queue)
+        not_found = self._ids - found
+        if not_found:
+            raise MissingObjects(not_found)
 
     def __contains__(self, id):
         raise NotImplementedError
