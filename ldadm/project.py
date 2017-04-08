@@ -167,3 +167,15 @@ class ProjectCommand(Command):
             project.entry_commit_changes(refresh = False)
         except LDAPAttributeOrValueExistsResult as err:
             raise RuntimeError("One or more users already assigned to this project") from err
+
+    def on_project_manage(self):
+        project_name = self._args.project
+        user_name = self._args.username
+        attr_name = cfg.project.attr.manager
+
+        project = self._get_project(project_name, attr_name).entry_writable()
+        users = UserMapping(base = cfg.user.base.active, limit = [user_name])
+        user_name = list(users.keys())[0]
+
+        setattr(project, attr_name, self._get_dns(user_name))
+        project.entry_commit_changes(refresh = False)
