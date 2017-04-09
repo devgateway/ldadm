@@ -261,7 +261,6 @@ class UserCommand(Command):
             raise RuntimeError(msg) from err
 
     def on_user_add(self):
-        uid_attr_name = UserMapping._attribute
         base = cfg.user.base.active
 
         # Get default values from a reference object
@@ -271,15 +270,15 @@ class UserCommand(Command):
             source_obj = None
 
         pre = {
-                cfg.user.attr.nuid: self._get_unique_id_number,
-                cfg.user.attr.uid: self._uid_unique,
-                cfg.user.attr.passwd: User.make_password
-                }
+            cfg.user.attr.nuid: self._get_unique_id_number,
+            cfg.user.attr.uid: self._uid_unique,
+            cfg.user.attr.passwd: User.make_password
+        }
 
         user = User(reference_object = source_obj, pre = pre)
 
         # Write the object to LDAP
-        uid = user.attrs[uid_attr_name]
+        uid = user.attrs[UserMapping._attribute]
         users = UserMapping(base = cfg.user.base.active)
         users[uid] = user.attrs
 
