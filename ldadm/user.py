@@ -225,19 +225,16 @@ class UserCommand(Command):
         self._list_users(filter = self._args.filter)
 
     def on_user_show(self):
-        usernames = list(self._args_or_stdin("username"))
         if self._args.suspended:
             base = cfg.user.base.suspended
         else:
             base = cfg.user.base.active
 
         # TODO: operational attributes
-        users = UserMapping(base = base, limit = usernames, attrs = ALL_ATTRIBUTES)
-        try:
-            for user_entry in users:
-                pretty_print(user_entry)
-        except MissingObjects as err:
-            raise RuntimeError("Users not found: " + ", ".join(err.items))
+        users = UserMapping(base = base, attrs = ALL_ATTRIBUTES)
+        users.select( self._args_or_stdin("username") )
+        for user_entry in users.items():
+            pretty_print(user_entry)
 
     def on_user_suspend(self):
         usernames = list(self._args_or_stdin("username"))
