@@ -205,8 +205,8 @@ class UserCommand(Command):
             base_from = cfg.user.base.active
             base_to = cfg.user.base.suspended
 
-        users = UserMapping(base = base_from, limit = usernames)
-        users.move_all(base_to)
+        users = UserMapping(base = base_from)
+        users.select(usernames).move(base_to)
 
     def _list_users(self, limit = None):
         if self._args.suspended:
