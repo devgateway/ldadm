@@ -191,8 +191,8 @@ class UserCommand(Command):
         # raise an exception if UID is not unique
         query = "%s: %s" % (cfg.user.attr.uid, uid)
         for base in (cfg.user.base.suspended, cfg.user.base.active):
-            collisions = UserMapping(base = base, limit = query)
-            if not collisions.is_empty():
+            collisions = UserMapping(base = base).select(query)
+            if collisions:
                 raise RuntimeError("UID %s already in use" % uid)
 
         return uid
@@ -287,13 +287,8 @@ class UserCommand(Command):
             print(user.message)
 
     def _get_user(self, username, attrs = None):
-        users = UserMapping(base = cfg.user.base.active, limit = [username], attrs = attrs)
-
-        try:
-            user_list = [u for u in users]
-            return user_list[0]
-        except MissingObjects as err:
-            raise RuntimeError("User %s not found" % username) from err
+        users = UserMapping(base = cfg.user.base.active, attrs = attrs)
+        return users[username]
 
     def on_user_passwd(self):
         username = self._args.username
