@@ -91,7 +91,7 @@ class LdapObjectMapping(MutableMapping):
     def __iter__(self):
         return self.keys()
 
-    def values(self):
+    def _find_items(self, ids = None):
         id_attr = self.__class__._attribute
         if self._attrs == ALL_ATTRIBUTES:
             requested_attrs = self._attrs
@@ -104,7 +104,7 @@ class LdapObjectMapping(MutableMapping):
             if id_attr not in requested_attrs:
                 requested_attrs.append(id_attr)
 
-        reader = self._get_reader()
+        reader = self._get_reader(ids)
         results = reader.search_paged(
                 paged_size = cfg.ldap.paged_search_size,
                 attributes = requested_attrs)
@@ -115,6 +115,9 @@ class LdapObjectMapping(MutableMapping):
             yield entry
 
         self.__assert_found_all(found)
+
+    def values(self):
+        return self._find_items()
 
     def keys(self):
         id_attr = self.__class__._attribute
@@ -134,7 +137,8 @@ class LdapObjectMapping(MutableMapping):
         raise NotImplementedError
 
     def __getitem__(self, id):
-        raise NotImplementedError
+        entries = self._find_items([id])
+        return [e for e in entries][0]
 
     def __setitem__(self, id, attrs):
         # Create a new virtual object
