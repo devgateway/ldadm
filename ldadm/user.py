@@ -237,11 +237,11 @@ class UserCommand(Command):
             pretty_print(user_entry)
 
     def on_user_suspend(self):
-        usernames = list(self._args_or_stdin("username"))
+        usernames = self._args_or_stdin("username")
         self._set_active(usernames, active = False)
 
     def on_user_restore(self):
-        usernames = list(self._args_or_stdin("username"))
+        usernames = self._args_or_stdin("username")
         self._set_active(usernames, active = True)
 
     def on_user_delete(self):
