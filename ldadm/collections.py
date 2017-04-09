@@ -14,14 +14,16 @@ from .objects import User, Unit, Project
 log = logging.getLogger(__name__)
 
 class MissingObjects(Exception):
-    def __init__(self, items):
+    def __init__(self, name, items):
+        self.name = name
         self.items = items
 
     def __str__(self):
-        return "Objects not found: " + ", ".join(list(self.items))
+        return "%s not found: %s" % ( self.name, ", ".join(list(self.items) )
 
 class LdapObjectMapping(MutableMapping):
     _attribute = None
+    _name = "Objects"
 
     def __init__(self, base = None, sub_tree = True, attrs = None):
         if not self.__class__._attribute:
@@ -192,7 +194,7 @@ class LdapObjectMapping(MutableMapping):
             return
 
         if not_found:
-            raise MissingObjects(not_found)
+            raise MissingObjects(self.__class__._name, not_found)
 
     def rename(self, id, new_id):
         writer = self._get_writer([id])
@@ -211,14 +213,17 @@ class LdapObjectMapping(MutableMapping):
         return True
 
 class UserMapping(LdapObjectMapping):
+    _name = "Users"
     _attribute = cfg.user.attr.uid
     _object_def = User._object_def
 
 class UnitMapping(LdapObjectMapping):
+    _name = "Units"
     _attribute = "organizationalUnitName"
     _object_def = Unit._object_def
 
 class ProjectMapping(LdapObjectMapping):
-    _base = cfg.project.base
+    _name = "Projects"
     _attribute = cfg.project.attr.id
     _object_def = Project._object_def
+    _base = cfg.project.base
