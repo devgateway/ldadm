@@ -208,21 +208,21 @@ class UserCommand(Command):
         users = UserMapping(base = base_from)
         users.select(usernames).move(base_to)
 
-    def _list_users(self, limit = None):
+    def _list_users(self, filter = None):
         if self._args.suspended:
             base = cfg.user.base.suspended
         else:
             base = cfg.user.base.active
 
-        users = UserMapping(base = base, limit = limit)
-        for uid in users.keys():
+        users = UserMapping(base = base)
+        for uid in users.select(filter):
             print(uid)
 
     def on_user_list(self):
         self._list_users()
 
     def on_user_search(self):
-        self._list_users(limit = self._args.filter)
+        self._list_users(filter = self._args.filter)
 
     def on_user_show(self):
         usernames = list(self._args_or_stdin("username"))
