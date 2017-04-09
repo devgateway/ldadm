@@ -39,12 +39,10 @@ class LdapObjectMapping(MutableMapping):
         self._select = None
 
     def select(self, criteria):
-        if type(criteria) is list:
-            self._select = set(criteria)
-        elif type(criteria) is str:
+        if type(criteria) is str:
             self._select = criteria
         else:
-            raise TypeError("Select criteria must be a string or list of IDs")
+            self._select = set(criteria)
 
         return self
 
