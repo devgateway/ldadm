@@ -27,25 +27,20 @@ class LdapObjectMapping(MutableMapping):
         if not self.__class__._attribute:
             raise ValueError("Primary attribute must be defined")
 
-        if base is None:
-            self._base = self.__class__._base
-        else:
+        if base:
             self._base = base
+        else:
+            self._base = self.__class__._base
 
         self._attrs = attrs
         self._sub_tree = sub_tree
-        self._ids = None
-        self._filter = ""
-
-        self.__queue = set()
+        self._select = None
 
     def select(self, criteria):
         if type(criteria) is list:
-            self._ids = set(criteria)
-            self._filter = ""
+            self._select = set(criteria)
         elif type(criteria) is str:
-            self._ids = None
-            self._filter = criteria
+            self._select = criteria
         else:
             raise TypeError("Select criteria must be a string or list of IDs")
 
@@ -53,12 +48,11 @@ class LdapObjectMapping(MutableMapping):
 
     @classmethod
     def _make_rdn(cls, entry, new_val):
-        attr = cls._attribute
         # RDN can be an array: gn=John+sn=Doe
         old_rdn = safe_rdn(entry.entry_dn, decompose = True)
         new_rdn = []
         for key_val in old_rdn:
-            if key_val[0] == attr:
+            if key_val[0] == cls._attribute:
                 # primary ID element
                 new_rdn.append( (key_val[0], new_val) )
             else:
@@ -66,11 +60,13 @@ class LdapObjectMapping(MutableMapping):
 
         return "+".join( map(lambda key_val: "%s=%s" % key_val, new_rdn) )
 
-    def _get_reader(self, ids = []):
+    def _get_reader(self, ids = None):
         if ids:
-            query = self.__class__._attribute + ": " + ";".join(list(self._ids))
+            query = self.__class__._attribute + ": " + ";".join(ids)
+        elif type(self._select) is set:
+            query = self.__class__._attribute + ": " + ";".join(list(self._select))
         else:
-            query = self._filter
+            query = self._select
 
         return Reader(
                 connection = ldap,
@@ -79,23 +75,23 @@ class LdapObjectMapping(MutableMapping):
                 object_def = self.__class__._object_def,
                 sub_tree = self._sub_tree)
 
-    def _get_writer(self, ids = []):
+    def _get_writer(self, ids = None):
         attrs = self.__class__._attribute
         reader = self._get_reader(ids)
         reader.search(attrs)
         return Writer.from_cursor(reader)
 
     def _make_dn(self, attrs):
-        attr = self.__class__._attribute
-        key = attrs[attr]
-        rdn = "=".join( [attr, escape_attribute_value(key)] )
+        id_attr = self.__class__._attribute
+        key = attrs[id_attr]
+        rdn = "=".join( [id_attr, escape_attribute_value(key)] )
         return safe_dn( [rdn, self._base] )
 
     def __iter__(self):
-        return self.values()
+        return self.keys()
 
     def values(self):
-        attr = self.__class__._attribute
+        id_attr = self.__class__._attribute
         if self._attrs == ALL_ATTRIBUTES:
             requested_attrs = self._attrs
         elif self._attrs is None:
@@ -104,8 +100,8 @@ class LdapObjectMapping(MutableMapping):
             requested_attrs = [self._attrs]
 
         if type(requested_attrs) is list:
-            if attr not in requested_attrs:
-                requested_attrs.append(attr)
+            if id_attr not in requested_attrs:
+                requested_attrs.append(id_attr)
 
         reader = self._get_reader()
         results = reader.search_paged(
@@ -113,29 +109,25 @@ class LdapObjectMapping(MutableMapping):
                 attributes = requested_attrs)
         found = set()
         for entry in results:
-            id = entry[attr].value
+            id = entry[id_attr].value
             found.add(id)
             yield entry
 
-        not_found = self._ids - found
-        if not_found:
-            raise MissingObjects(not_found)
+        self.__assert_found_all(found)
 
     def keys(self):
-        attr = self.__class__._attribute
+        id_attr = self.__class__._attribute
         reader = self._get_reader()
         results = reader.search_paged(
                 paged_size = cfg.ldap.paged_search_size,
-                attributes = attr)
+                attributes = self.__class__._attribute)
         found = set()
         for entry in results:
-            id = entry[attr].value
+            id = entry[id_attr].value
             found.add(id)
             yield id
 
-        not_found = self._ids - found
-        if not_found:
-            raise MissingObjects(not_found)
+        self.__assert_found_all(found)
 
     def __contains__(self, id):
         raise NotImplementedError
@@ -157,24 +149,24 @@ class LdapObjectMapping(MutableMapping):
         entry.entry_commit_changes(refresh = False)
 
     def __delitem__(self, id):
-        self.__queue.add(id)
+        raise NotImplementedError
 
-    def commit_delete(self):
-        attr = self.__class__._attribute
-        writer = self._get_writer(self.__queue)
+    def delete(self):
+        id_attr = self.__class__._attribute
+        writer = self._get_writer()
 
+        found = set()
         for entry in writer:
-            key = entry[attr].value
+            id = entry[id_attr].value
+            found.add(id)
             entry.entry_delete()
-            self.__queue.remove(key)
 
         writer.commit(refresh = False)
 
-        if self.__queue:
-            raise MissingObjects(self.__queue)
+        self.__assert_found_all(found)
 
-    def move_all(self, dest):
-        attr = self.__class__._attribute
+    def move(self, dest):
+        id_attr = self.__class__._attribute
         try:
             new_base = dest._base
         except AttributeError:
@@ -182,18 +174,28 @@ class LdapObjectMapping(MutableMapping):
 
         writer = self._get_writer()
 
+        found = set()
         for entry in writer:
-            key = entry[attr].value
+            id = entry[id_attr].value
+            found.add(id)
             entry.entry_move(new_base)
-            self.__queue.remove(key)
 
         writer.commit(refresh = False)
 
-        if self.__queue:
-            raise MissingObjects(self.__queue)
+        self.__assert_found_all(found)
+
+    def __assert_found_all(self, found):
+        """Raise an exception if not all selected items have been found."""
+        try:
+            not_found = self._select - found
+        except TypeError: # did not select by list
+            return
+
+        if not_found:
+            raise MissingObjects(not_found)
 
     def rename(self, id, new_id):
-        writer = self._get_writer([id])
+        writer = self._get_writer([id]) # TODO
         entry = writer.entries[0]
         rdn = self._make_rdn(entry, new_id)
         entry.entry_rename(rdn)
@@ -202,8 +204,8 @@ class LdapObjectMapping(MutableMapping):
     def __len__(self):
         raise NotImplementedError
 
-    def is_empty(self):
-        for item in self.values():
+    def __bool__(self):
+        for item in self.keys():
             return False
 
         return True
