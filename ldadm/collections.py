@@ -19,7 +19,8 @@ class MissingObjects(Exception):
         self.items = items
 
     def __str__(self):
-        return "%s not found: %s" % ( self.name, ", ".join(list(self.items) )
+        items = ", ".join(list(self.items))
+        return "%s not found: %s" % (self.name, items)
 
 class LdapObjectMapping(MutableMapping):
     _attribute = None
@@ -39,7 +40,7 @@ class LdapObjectMapping(MutableMapping):
         self._select = None
 
     def select(self, criteria):
-        if type(criteria) is str:
+        if type(criteria) is str or criteria is None:
             self._select = criteria
         else:
             self._select = set(criteria)
