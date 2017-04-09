@@ -176,7 +176,7 @@ class UserCommand(Command):
             users = UserMapping(base = base, attrs = attr_name)
             users.select( map(str, candidates) )
 
-            collisions = set( user[attr_name].value for user in users.items() )
+            collisions = set( user[attr_name].value for user in users.values() )
             candidates -= collisions
             if collisions:
                 log.debug("UID collisions skipped: " + " ".join(map(str, collisions)))
@@ -233,7 +233,7 @@ class UserCommand(Command):
         # TODO: operational attributes
         users = UserMapping(base = base, attrs = ALL_ATTRIBUTES)
         users.select( self._args_or_stdin("username") )
-        for user_entry in users.items():
+        for user_entry in users.values():
             pretty_print(user_entry)
 
     def on_user_suspend(self):
