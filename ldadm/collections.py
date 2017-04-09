@@ -195,7 +195,7 @@ class LdapObjectMapping(MutableMapping):
             raise MissingObjects(not_found)
 
     def rename(self, id, new_id):
-        writer = self._get_writer([id]) # TODO
+        writer = self._get_writer([id])
         entry = writer.entries[0]
         rdn = self._make_rdn(entry, new_id)
         entry.entry_rename(rdn)

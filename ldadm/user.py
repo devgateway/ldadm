@@ -173,10 +173,10 @@ class UserCommand(Command):
 
         # find existing UIDs, and remove them from the list of candidates
         for base in (cfg.user.base.suspended, cfg.user.base.active):
-            query = attr_name + ": " + "; ".join( map(str, candidates) )
-            users = UserMapping(base = base, limit = query, attrs = attr_name)
+            users = UserMapping(base = base, attrs = attr_name)
+            users.select( map(str, candidates) )
 
-            collisions = set( user[attr_name].value for user in users )
+            collisions = set( user[attr_name].value for user in users.items() )
             candidates -= collisions
             if collisions:
                 log.debug("UID collisions skipped: " + " ".join(map(str, collisions)))
