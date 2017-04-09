@@ -211,9 +211,9 @@ class LdapObjectMapping(MutableMapping):
 
     def __bool__(self):
         for item in self.keys():
-            return False
+            return True
 
-        return True
+        return False
 
 class UserMapping(LdapObjectMapping):
     _name = "Users"
