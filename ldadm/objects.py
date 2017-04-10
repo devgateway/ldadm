@@ -181,8 +181,9 @@ class LdapObject:
         if key in self._callbacks_pre:
             callback = self._callbacks_pre[key]
             try:
-                log.debug("Calling %s before prompt" % key)
+                log.debug("Calling %s handler before prompt" % key)
                 default = callback(default)
+                log.debug("%s handler returned %s" % (key, str(default)))
             except Exception as err:
                 # the callback failed; resort to user input
                 log.warn(err)
@@ -222,7 +223,7 @@ class LdapObject:
                     continue
 
                 if result:
-                    self.attrs[names] = response
+                    self.attrs[names] = result
                     break
                 else:
                     log.error("%s requires a value" % key)
@@ -239,8 +240,9 @@ class LdapObject:
 
                 try:
                     callback = self._callbacks_post[key]
-                    log.debug("Calling %s after prompt" % key)
+                    log.debug("Calling %s handler after prompt" % key)
                     result = callback(result)
+                    log.debug("%s handler returned %s" % (key, str(result)))
                 except KeyError:
                     pass # no callback set
                 except Exception as err:

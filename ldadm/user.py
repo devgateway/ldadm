@@ -174,7 +174,11 @@ class UserCommand(Command):
         # find existing UIDs, and remove them from the list of candidates
         for base in (cfg.user.base.suspended, cfg.user.base.active):
             users = UserMapping(base = base, attrs = attr_name)
-            users.select( map(str, candidates) )
+            try:
+                query = attr_name + ": " + "; ".join( map(str, candidates) )
+                users.select(query)
+            except MissingObjects:
+                pass
 
             collisions = set( user[attr_name].value for user in users.values() )
             candidates -= collisions
@@ -191,7 +195,12 @@ class UserCommand(Command):
         # raise an exception if UID is not unique
         query = "%s: %s" % (cfg.user.attr.uid, uid)
         for base in (cfg.user.base.suspended, cfg.user.base.active):
-            collisions = UserMapping(base = base).select(query)
+            collisions = UserMapping(base = base)
+            try:
+                collisions.select(query)
+            except MissingObjects:
+                pass
+
             if collisions:
                 raise RuntimeError("UID %s already in use" % uid)
 
