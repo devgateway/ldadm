@@ -91,15 +91,16 @@ class UnitCommand(Command):
             print(uid)
 
     def on_unit_add(self):
-        parent_name = self._args.parent
-        if parent_name:
-            parent = self._get_unit(parent_name)
-            base = parent.entry_dn
-        else:
-            base = __class__.__base
-
         unit = Unit()
         ou = unit.attrs[UnitMapping._attribute]
+
+        parent_name = self._args.parent
+        if parent_name:
+            parent = UnitMapping()[parent_name]
+            base = parent.entry_dn
+        else:
+            base = None
+
         subunits = UnitMapping(base = base)
         subunits[ou] = unit.attrs
 
