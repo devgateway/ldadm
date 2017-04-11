@@ -103,7 +103,7 @@ class ProjectCommand(Command):
 
     def on_project_list(self):
         projects = ProjectMapping()
-        for name in projects.keys():
+        for name in projects:
             print(name)
 
     def on_project_show(self):
