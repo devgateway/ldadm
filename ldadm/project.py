@@ -147,7 +147,8 @@ class ProjectCommand(Command):
         project_name = self._args.project
         attr_name = cfg.project.attr.member
 
-        project = ProjectMapping()[project_name].entry_writable()
+        projects = ProjectMapping(attrs = attr_name)
+        project = projects[project_name].entry_writable()
         members = project[attr_name]
 
         usernames = list(self._args_or_stdin("username"))
