@@ -120,6 +120,20 @@ class LdapObject:
     def _resolve_attribute(self, raw_name):
         """Fill attribute value from input, get defaults from template, or reference entry"""
 
+        def execute_callback(callback, arg):
+            callback_name = "%s(%s)" % (callback.__qualname__, repr(arg))
+            if callback.__doc__:
+                log.debug("For %s calling %s (%s)" %
+                        (key, callback_name, callback.__doc__) )
+            else:
+                log.debug("For %s calling %s" % (key, callback_name))
+
+            result = callback(arg)
+
+            log.debug( "%s returned %s" % (callback_name, repr(result)) )
+
+            return result
+
         # use unambiguous name as the dictionary key
         names = self._canonicalize_name(raw_name)
         key = names[0]
@@ -178,16 +192,15 @@ class LdapObject:
             default = None
 
         # indirectly apply callbacks: give them current default, receive new default
-        if key in self._callbacks_pre:
+        try:
             callback = self._callbacks_pre[key]
-            try:
-                log.debug("Calling %s handler before prompt" % key)
-                default = callback(default)
-                log.debug("%s handler returned %s" % (key, str(default)))
-            except Exception as err:
-                # the callback failed; resort to user input
-                log.warn(err)
-                default = None
+            default = execute_callback(callback, default)
+        except KeyError:
+            pass # no callback set
+        except Exception as err:
+            # the callback failed; resort to user input
+            log.warn(err)
+            default = None
 
         # prepare a human-readable default prompt; convert dict to semicolon-delimited string
         if default:
@@ -213,8 +226,7 @@ class LdapObject:
                 # indirectly apply callbacks
                 try:
                     callback = self._callbacks_post[key]
-                    log.debug("Calling %s after prompt" % key)
-                    result = callback(result)
+                    result = execute_callback(callback, result)
                 except KeyError: # no callback set
                     pass
                 except Exception as err:
@@ -240,9 +252,7 @@ class LdapObject:
 
                 try:
                     callback = self._callbacks_post[key]
-                    log.debug("Calling %s handler after prompt" % key)
-                    result = callback(result)
-                    log.debug("%s handler returned %s" % (key, str(result)))
+                    result = execute_callback(callback, result)
                 except KeyError:
                     pass # no callback set
                 except Exception as err:
