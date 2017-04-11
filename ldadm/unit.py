@@ -76,9 +76,8 @@ class UnitCommand(Command):
             raise RuntimeError("Unit %s not found" % unit_name) from err
 
     def on_unit_list(self):
-        units = UnitMapping(base = __class__.__base)
-        for name in units.keys():
-            print(name)
+        for unit in UnitMapping():
+            print(unit)
 
     def on_unit_show(self):
         unit_name = self._args.unit
