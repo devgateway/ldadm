@@ -164,6 +164,8 @@ class UserCommand(Command):
     }
 
     def _get_unique_id_number(self, *args_ignored):
+        """Suggest a unique user ID number"""
+
         umin = cfg.user.nuid.min
         umax = cfg.user.nuid.max
         attr_name = cfg.user.attr.nuid
@@ -192,7 +194,8 @@ class UserCommand(Command):
             raise RuntimeError("Couldn't create a unique UID in %i attempts" % n) from err
 
     def _uid_unique(self, uid):
-        # raise an exception if UID is not unique
+        """Check if user ID is unique among active and suspended users"""
+
         query = "%s: %s" % (cfg.user.attr.uid, uid)
         for base in (cfg.user.base.suspended, cfg.user.base.active):
             collisions = UserMapping(base = base)

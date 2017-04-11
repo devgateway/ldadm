@@ -121,16 +121,15 @@ class LdapObject:
         """Fill attribute value from input, get defaults from template, or reference entry"""
 
         def execute_callback(callback, arg):
-            callback_name = "%s(%s)" % (callback.__qualname__, repr(arg))
-            if callback.__doc__:
-                log.debug("For %s calling %s (%s)" %
-                        (key, callback_name, callback.__doc__) )
+            name = "%s(%s)" % (callback.__qualname__, repr(arg))
+            doc = callback.__doc__
+            if doc:
+                log.debug("For %s, calling %s # %s" % (key, name, doc))
             else:
-                log.debug("For %s calling %s" % (key, callback_name))
+                log.debug("For %s, calling %s" % (key, name))
 
             result = callback(arg)
-
-            log.debug( "%s returned %s" % (callback_name, repr(result)) )
+            log.debug( "%s returned %s" % (name, repr(result)) )
 
             return result
 
