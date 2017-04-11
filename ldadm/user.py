@@ -1,16 +1,16 @@
 import random, re, logging
-from argparse import FileType
+from argparse import FileType, ArgumentParser
 
-from ldap3 import ALL_ATTRIBUTES
+from ldap3 import ALL_ATTRIBUTES, ObjectDef
 from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, \
         LDAPKeyError, LDAPAttributeOrValueExistsResult
 from sshpubkeys import SSHKey, InvalidKeyException
 
 from .console import pretty_print
-from .objects import LdapObject
 from .command import Command
-from .collections import LdapObjectMapping, MissingObjects
+from .abstract import LdapObjectMapping, MissingObjects, LdapObject
 from .config import cfg
+from .connection import ldap
 
 log = logging.getLogger(__name__)
 

@@ -1,13 +1,15 @@
 import logging
+from argparse import ArgumentParser
 
+from ldap3 import ObjectDef
 from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, LDAPKeyError, \
         LDAPAttributeOrValueExistsResult, LDAPNotAllowedOnNotLeafResult
 
 from .command import Command
-from .collections import UserMapping, MissingObjects, LdapObjectMapping
-from .config import cfg
-from .objects import LdapObject
-from .user import multi_user
+from .abstract import LdapObjectMapping, LdapObject
+from .config import cfg, ConfigAttrError
+from .user import UserMapping, multi_user
+from .connection import ldap
 
 log = logging.getLogger(__name__)
 

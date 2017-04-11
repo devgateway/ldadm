@@ -3,14 +3,14 @@ from argparse import ArgumentParser
 
 from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, LDAPKeyError, \
         LDAPAttributeOrValueExistsResult
-from ldap3 import ALL_ATTRIBUTES
+from ldap3 import ALL_ATTRIBUTES, ObjectDef
 
 from .command import Command
-from .collections import UserMapping, MissingObjects, LdapObjectMapping
+from .abstract import MissingObjects, LdapObjectMapping, LdapObject
 from .config import cfg
-from .objects import LdapObject
-from .user import single_user, multi_user
+from .user import single_user, multi_user, UserMapping
 from .console import pretty_print
+from .connection import ldap
 
 log = logging.getLogger(__name__)
 
