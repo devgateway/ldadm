@@ -70,15 +70,6 @@ class ProjectCommand(Command):
         }
     }
 
-    def _get_project(self, project_name, attrs = None):
-        projects = ProjectMapping(limit = [project_name], attrs = attrs)
-
-        try:
-            project_list = [p for p in projects]
-            return project_list[0]
-        except MissingObjects as err:
-            raise RuntimeError("Project %s not found" % project_name) from err
-
     def _get_dn(self, names):
         if type(names) is list:
             name_list = names
