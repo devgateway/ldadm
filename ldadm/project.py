@@ -118,10 +118,11 @@ class ProjectCommand(Command):
 
     def on_project_add(self):
         attr_name = ProjectMapping._attribute
+        projects = ProjectMapping(attrs = ALL_ATTRIBUTES)
 
         # Get default values from a reference object
         if self._args.defaults:
-            source_obj = self._get_project(self._args.defaults, ALL_ATTRIBUTES)
+            source_obj = projects[self._args.defaults]
         else:
             source_obj = None
 
@@ -131,7 +132,6 @@ class ProjectCommand(Command):
                 }
         project = Project(reference_object = source_obj, post = post)
         id = project.attrs[attr_name]
-        projects = ProjectMapping()
         projects[id] = project.attrs
 
         if project.message:
