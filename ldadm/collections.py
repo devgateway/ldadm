@@ -13,6 +13,40 @@ from .objects import User, Unit, Project
 
 log = logging.getLogger(__name__)
 
+#### How to use this MutableMapping
+### List IDs:
+# for key in mapping:
+#     print(key)
+
+### List items:
+# for entry in mapping.items():
+#     yada(entry)
+
+### Search by ldap3 simplified query:
+# for key in mapping.select( 'uidNumber: 42; 43' ):
+#     print(key)
+
+### Search by filter:
+# for key in mapping.select( '(&(givenName=Not)(surname=Sure))' ):
+#     print(key)
+
+### Search by ID list:
+# for key in mapping.select( ['foo', 'bar'] ):
+#     print(key)
+
+### Delete:
+# mapping.select(['foo', 'bar']).delete()
+
+### Get entry:
+# entry = mapping['foo']
+
+### Set entry:
+# mapping['foo'] = attrs
+
+### Check if empty:
+# if mapping:
+#     yada
+
 class MissingObjects(Exception):
     def __init__(self, name, items):
         self.name = name
