@@ -268,9 +268,3 @@ class UnitMapping(LdapObjectMapping):
     _attribute = "organizationalUnitName"
     _object_def = Unit._object_def
     _base = cfg.user.base.active
-
-class ProjectMapping(LdapObjectMapping):
-    _name = "Projects"
-    _attribute = cfg.project.attr.id
-    _object_def = Project._object_def
-    _base = cfg.project.base

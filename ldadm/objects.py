@@ -308,8 +308,3 @@ class Unit(LdapObject):
     _object_class = "organizationalUnit"
     # Load attribute definitions by ObjectClass
     _object_def = ObjectDef(object_class = _object_class, schema = ldap)
-
-class Project(LdapObject):
-    _config_node = cfg.project
-    _object_class = cfg.project.objectclass
-    _object_def = ObjectDef(object_class = _object_class, schema = ldap)

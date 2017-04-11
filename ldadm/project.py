@@ -1,17 +1,40 @@
 import logging
+from argparse import ArgumentParser
 
 from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, LDAPKeyError, \
         LDAPAttributeOrValueExistsResult
 from ldap3 import ALL_ATTRIBUTES
 
 from .command import Command
-from .collections import ProjectMapping, UserMapping, MissingObjects
+from .collections import UserMapping, MissingObjects, LdapObjectMapping
 from .config import cfg
-from .objects import Project
-from .parsers import single_user, multi_user, single_project, multi_project
+from .objects import LdapObject
+from .parsers import single_user, multi_user
 from .console import pretty_print
 
 log = logging.getLogger(__name__)
+
+single_project = ArgumentParser(add_help = False)
+single_project.add_argument("project",
+        metavar = "PROJECT",
+        help = "Project name")
+
+multi_project = ArgumentParser(add_help = False)
+multi_project.add_argument("project",
+        metavar = "PROJECT_NAME",
+        nargs = "*",
+        help = "One or more project names. If omitted, read from stdin.")
+
+class Project(LdapObject):
+    _config_node = cfg.project
+    _object_class = cfg.project.objectclass
+    _object_def = ObjectDef(object_class = _object_class, schema = ldap)
+
+class ProjectMapping(LdapObjectMapping):
+    _name = "Projects"
+    _attribute = cfg.project.attr.id
+    _object_def = Project._object_def
+    _base = cfg.project.base
 
 class ProjectCommand(Command):
     __base = cfg.project.base
