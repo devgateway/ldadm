@@ -57,8 +57,15 @@ class ProjectCommand(Command):
             },
             "assign": {
                 "kwargs": {
-                    "parents": [single_project, multi_user],
+                    "parents": [single_project],
                     "help": "Make users members of the project"
+                },
+                "arguments": {
+                    "names": {
+                        "metavar": "NAME",
+                        "help": "User or server ID",
+                        "nargs": "+"
+                    }
                 }
             },
             "manage": {
@@ -140,13 +147,11 @@ class ProjectCommand(Command):
         project = projects[project_name].entry_writable()
         members = project[attr_name]
 
-        usernames = list(self._args_or_stdin("username"))
-        if not usernames:
-            raise RuntimeError("Expected usernames to assign to %s" % project_name)
+        names = list(self._args_or_stdin("names"))
+        if not names:
+            raise RuntimeError("Expected user or server IDs to assign to %s" % project_name)
 
-        users = UserMapping(base = cfg.user.base.active).select(usernames)
-        new_members = list(users.dns())
-        members += new_members
+        members += self._get_dn(names)
 
         try:
             project.entry_commit_changes(refresh = False)
