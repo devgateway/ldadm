@@ -1,19 +1,19 @@
-# ldadm — manage LDAP accounts
+# ldadm - manage LDAP accounts
 
 ## Synopsis
 
-	ldadm [OPTIONS…] {user|unit|list|server|project} [ARGUMENTS…]
+	ldadm [OPTIONS...] {user|unit|list|server|project} [ARGUMENTS...]
 
 ### User commands
 
 	ldadm user list [--suspended]
 	ldadm user search [--suspended] LDAP_FILTER
-	ldadm user show [--suspended] [USER_NAME…]
-	ldadm user {suspend|restore|delete} [USER_NAME…]
+	ldadm user show [--suspended] [USER_NAME...]
+	ldadm user {suspend|restore|delete} [USER_NAME...]
 	ldadm user add [--defaults USER_NAME]
 	ldadm user rename OLD_NAME NEW_NAME
 	ldadm user key list USER_NAME
-	ldadm user key delete USER_NAME KEY_NAME…
+	ldadm user key delete USER_NAME KEY_NAME...
 	ldadm user key add [--file FILE_NAME] USER_NAME
 
 ### Unit commands
@@ -22,13 +22,22 @@
 	ldadm unit show [--full] UNIT
 	ldadm unit add [--parent PARENT_UNIT]
 	ldadm unit delete UNIT
-	ldadm unit assign UNIT [USER_NAME…]
+	ldadm unit assign UNIT [USER_NAME...]
+
+### Project commands
+
+	ldadm project list
+	ldadm project show PROJECT
+	ldadm project add
+	ldadm project delete PROJECT
+	ldadm project assign PROJECT [{USER_NAME|SERVER_NAME}...]
+	ldadm project manage PROJECT USER_NAME
 
 ### List commands
 
 	ldadm list list
-	ldadm list {show|search|delete|add} [LIST…] [ARGUMENTS…]
-	ldadm list {useradd|userdel} LIST [USER_NAME…]
+	ldadm list {show|search|delete|add} [LIST...] [ARGUMENTS...]
+	ldadm list {useradd|userdel} LIST [USER_NAME...]
 
 ## User commands
 
@@ -52,7 +61,7 @@ You are responsible for escaping the filter properly.
 
 ### Displaying user attributes
 
-	ldadm user show [--suspended] [USER_NAME…]
+	ldadm user show [--suspended] [USER_NAME...]
 
 Display all user attributes. If `--full` argument is given, also display operational attributes. If `--suspended` argument is given, only show inactive accounts.
 
@@ -60,14 +69,14 @@ One or more user names may be given as arguments, or provided from standard inpu
 
 ### Suspending and restoring users
 
-	ldadm user suspend [USER_NAME…]
-	ldadm user restore [USER_NAME…]
+	ldadm user suspend [USER_NAME...]
+	ldadm user restore [USER_NAME...]
 
 Move user accounts from active to suspended unit, or vice versa. LDAP server must preserve the account unique ID on these LDAP move operations.
 
 ### Deleting suspended users
 
-	ldadm user delete [USER_NAME…]
+	ldadm user delete [USER_NAME...]
 
 Delete the accounts from LDAP completely. Only suspended accounts will be considered, so if you want an active account deleted, you must suspend it first.
 
@@ -113,7 +122,7 @@ List MD5 hashes and comments (if present) for the user's SSH public keys. Unsupp
 
 ### Deleting SSH public keys from a user
 
-	ldadm user key delete USER_NAME KEY_NAME…
+	ldadm user key delete USER_NAME KEY_NAME...
 
 Delete public keys from the user by MD5 hash or comment. MD5 prefix and separators are ignored, only 16 hex digits are used. If those are not found, the argument is considered the comment part of the key.
 
@@ -143,17 +152,55 @@ List user IDs belonging to a unit. If `--full` argument is given, a subtree sear
 
 Add a new unit, prompting the user for required attributes. If `--parent` argument is given, create the new one nested under that unit.
 
-### Deleting a unit
+### Deleting units
 
-	ldadm unit delete UNIT
+	ldadm unit delete [UNIT...]
 
-Removing an empty unit. LDAP server must refuse the operation if the unit is not empty.
+Removing empty units. LDAP server must refuse the operation if a unit is not empty.
 
 ### Moving people to a unit
 
-	ldadm unit assign UNIT [USER_NAME…]
+	ldadm unit assign UNIT [USER_NAME...]
 
 Assign users to a unit, moving their accounts from their current unit(s). User names are read from argument list, or standard input.
+
+## Project commands
+
+### Listing projects
+
+	ldadm project list
+
+List project names, one per line.
+
+### Displaying project attributes
+
+	ldadm project show [PROJECT...]
+
+Display all project attributes.  One or more project names may be given as arguments, or provided from standard input. If they're given as arguments, standard input is ignored.
+
+### Creating a new project
+
+	ldadm project add
+
+Add a new project, prompting the user for required attributes.
+
+### Deleting projects
+
+	ldadm project delete [PROJECT...]
+
+Remove projects.
+
+### Assigning people or servers to a project
+
+	ldadm project assign PROJECT [{USER_NAME|SERVER_NAME}...]
+
+Make users or servers members of a project.
+
+### Setting a project manager
+
+	ldadm project manage PROJECT USER_NAME
+
+Make a user project manager.
 
 ## Configuration file
 
@@ -169,36 +216,52 @@ The first file found will be used. The file is in [YAML format](http://yaml.org/
 
 Contains generic parameters for LDAP server connection and search.
 
-* `uri` — LDAP server URI. Everything permitted by libldap is accepted, including port specification and space-separated multiple URIs.
+* `uri` - LDAP server URI. Everything permitted by libldap is accepted, including port specification and space-separated multiple URIs.
 
-* `binddn`, `bindpw` — optional DN and password to connect as. If omitted, anonymous bind is used.
+* `binddn`, `bindpw` - optional DN and password to connect as. If omitted, anonymous bind is used.
 
-* `paged_search_size` — multiple object operations are performed using paged search, fetching this many objects at a time. Be sure to set it lower than your server search size limit (default is usually 500).
+* `paged_search_size` - multiple object operations are performed using paged search, fetching this many objects at a time. Be sure to set it lower than your server search size limit (default is usually 500).
 
 ### Section `user`
 
 Contains settings and templates for user account objects.
 
-* `base` — a dictionary with LDAP search bases for user accounts: `active` and `suspended`.
+* `base` - a dictionary with LDAP search bases for user accounts: `active` and `suspended`.
 
-* `nuid` — a dictionary defining the range for numeric user IDs: `min` and `max`.
+* `nuid` - a dictionary defining the range for numeric user IDs: `min` and `max`.
 
-* `message_on_create` — an optional message printed when a user account has been created. Using YAML indented delimiting is recommended for readability. Note that YAML discards the first indented empty string, so use two indented empty strings when you want an empty line printed.
+* `message_on_create` - an optional message printed when a user account has been created. Using YAML indented delimiting is recommended for readability. Note that YAML discards the first indented empty string, so use two indented empty strings when you want an empty line printed.
 
-* `objectclass` — a list of LDAP object classes implied in account search and creation.
+* `objectclass` - a list of LDAP object classes implied in account search and creation.
 
-* `attr` — a dictionary defining the actual attribute names in your directory and templates for new accounts.
+* `attr` - a dictionary defining the actual attribute names in your directory and templates for new accounts.
 
 #### Dictionary `attr`
 
-* `uid`, `nuid`, `passwd` — attribute names for user ID, numeric user ID, and user password, respectively.
+* `uid`, `nuid`, `passwd` - attribute names for user ID, numeric user ID, and user password, respectively.
 
-* `templates` — an optional dictionary, where keys are attribute names, and values are Python formatting strings (or lists thereof), that can refer to other attributes. Be sure to quote the values if they start with a brace, because braces are special in YAML. Don't cause infinite recursion by defining attributes using each other.
+* `templates` - an optional dictionary, where keys are attribute names, and values are Python formatting strings (or lists thereof), that can refer to other attributes. Be sure to quote the values if they start with a brace, because braces are special in YAML. Don't cause infinite recursion by defining attributes using each other.
 
-* `modify` — an optional dictionary, where keys are attribute names, and values are Python string functions. Functions get applied to default attribute values after formatting, but before confirming with the user. Permitted functions are: capitalize, casefold, lower, swapcase, title, upper.
+* `modify` - an optional dictionary, where keys are attribute names, and values are Python string functions. Functions get applied to default attribute values after formatting, but before confirming with the user. Permitted functions are: capitalize, casefold, lower, swapcase, title, upper.
+
+### Section `project`
+
+Contains settings and templates for project objects.
+
+* `base` - LDAP search base for projects.
+
+* `objectclass`, `message_on_create`, `attr` - identical to the ones in section `user`
+
+#### Dictionary `attr`
+
+* `id` - attribute name for project RDN.
+
+* `manager` - attribute containing the DN of the project manager.
+
+* `member` - contains DNs of member users and servers.
 
 ## Environment
 
-* `XDG_CONFIG_HOME`, `HOME` — used to search the configuration file, see details above.
+* `XDG_CONFIG_HOME`, `HOME` - used to search the configuration file, see details above.
 
-* `LOG_LEVEL` — logging verbosity. Valid levels are: CRITICAL, ERROR, WARNING, INFO, and DEBUG; with WARNING being the default. If level is DEBUG, unexpected exceptions are not trapped, and backtrace is printed.
+* `LOG_LEVEL` - logging verbosity. Valid levels are: CRITICAL, ERROR, WARNING, INFO, and DEBUG; with WARNING being the default. If level is DEBUG, unexpected exceptions are not trapped, and backtrace is printed.
