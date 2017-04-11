@@ -18,6 +18,7 @@ class LdapObject:
     _object_def = None
     _config_node = None
     _object_class = None
+    _required_attrs = []
 
     def __init__(self, reference_object = None, pre = {}, post = {}):
         self._callbacks_pre = pre
@@ -26,7 +27,6 @@ class LdapObject:
         self._modifiers = self._read_modifiers()
         self.attrs = CaseInsensitiveWithAliasDict()
         self.message = ""
-        self._required_attrs = []
         self._reference = reference_object
 
         # resolve a message that will be output
@@ -53,7 +53,9 @@ class LdapObject:
         # Resolve each attribute recursively
         for attr_def in self.__class__._object_def:
             key = attr_def.key
-            if key in self._templates or key in self._required_attrs or attr_def.mandatory:
+            if key in self._templates \
+                    or key in self.__class__._required_attrs \
+                    or attr_def.mandatory:
                 if key.lower() == "objectclass":
                     self.attrs[key] = self.__class__._object_class
                 else:
@@ -104,11 +106,12 @@ class LdapObject:
 
         return result
 
-    def _canonicalize_name(self, raw_name):
+    @classmethod
+    def _canonicalize_name(cls, raw_name):
         """Normalize attribute name to use as CaseInsensitiveWithAliasDict index"""
         # rewritten from ldap3 library:
         # take properly cased attribute name, add other names as aliases
-        definition = self.__class__._object_def[raw_name]
+        definition = cls._object_def[raw_name]
         all_names = [definition.key]
         if definition.oid_info:
             for name in definition.oid_info.name:
@@ -293,7 +296,7 @@ class User(LdapObject):
         return ''.join(chars)
 
     def __init__(self, reference_object = None, pre = {}, post = {}):
-        self._required_attrs = [ self._canonicalize_name(cfg.user.attr.passwd)[0] ]
+        self.__class__._required_attrs = [ self._canonicalize_name(cfg.user.attr.passwd)[0] ]
         super().__init__(reference_object = reference_object, pre = pre, post = post)
 
 class Unit(LdapObject):
