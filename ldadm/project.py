@@ -139,17 +139,9 @@ class ProjectCommand(Command):
 
     def on_project_delete(self):
         project_names = list(self._args_or_stdin("project"))
-        if not project_names:
-            return
-
-        projects = ProjectMapping(limit = project_names)
-        for name in project_names:
-            del projects[name]
-
-        try:
-            projects.commit_delete()
-        except MissingObjects as err:
-            raise RuntimeError("Projects not found: " + ", ".join(err.items))
+        if project_names:
+            projects = ProjectMapping()
+            projects.select(project_names).delete()
 
     def on_project_assign(self):
         project_name = self._args.project
