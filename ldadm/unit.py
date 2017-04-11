@@ -66,15 +66,6 @@ class UnitCommand(Command):
         }
     }
 
-    def _get_unit(self, unit_name):
-        units = UnitMapping(base = __class__.__base, limit = [unit_name])
-
-        try:
-            unit_list = [u for u in units]
-            return unit_list[0]
-        except MissingObjects as err:
-            raise RuntimeError("Unit %s not found" % unit_name) from err
-
     def on_unit_list(self):
         for unit in UnitMapping():
             print(unit)
