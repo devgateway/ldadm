@@ -4,12 +4,39 @@ from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, LDAPKeyError, \
         LDAPAttributeOrValueExistsResult, LDAPNotAllowedOnNotLeafResult
 
 from .command import Command
-from .collections import UnitMapping, UserMapping, MissingObjects
+from .collections import UserMapping, MissingObjects, LdapObjectMapping
 from .config import cfg
-from .objects import Unit
-from .parsers import multi_user, single_unit, multi_unit
+from .objects import LdapObject
+from .parsers import multi_user
 
 log = logging.getLogger(__name__)
+
+single_unit = ArgumentParser(add_help = False)
+single_unit.add_argument("unit",
+        metavar = "UNIT",
+        help = "Unit name")
+
+multi_unit = ArgumentParser(add_help = False)
+multi_unit.add_argument("unit",
+        metavar = "UNIT_NAME",
+        nargs = "*",
+        help = "One or more unit names. If omitted, read from stdin.")
+
+class Unit(LdapObject):
+    try:
+        _config_node = cfg.unit
+    except ConfigAttrError:
+        _config_node = None
+
+    _object_class = "organizationalUnit"
+    # Load attribute definitions by ObjectClass
+    _object_def = ObjectDef(object_class = _object_class, schema = ldap)
+
+class UnitMapping(LdapObjectMapping):
+    _name = "Units"
+    _attribute = "organizationalUnitName"
+    _object_def = Unit._object_def
+    _base = cfg.user.base.active
 
 class UnitCommand(Command):
     __base = cfg.user.base.active

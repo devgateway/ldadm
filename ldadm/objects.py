@@ -298,13 +298,3 @@ class User(LdapObject):
     def __init__(self, reference_object = None, pre = {}, post = {}):
         self.__class__._required_attrs = [ self._canonicalize_name(cfg.user.attr.passwd)[0] ]
         super().__init__(reference_object = reference_object, pre = pre, post = post)
-
-class Unit(LdapObject):
-    try:
-        _config_node = cfg.unit
-    except ConfigAttrError:
-        _config_node = None
-
-    _object_class = "organizationalUnit"
-    # Load attribute definitions by ObjectClass
-    _object_def = ObjectDef(object_class = _object_class, schema = ldap)

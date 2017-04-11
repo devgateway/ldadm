@@ -262,9 +262,3 @@ class UserMapping(LdapObjectMapping):
     _name = "Users"
     _attribute = cfg.user.attr.uid
     _object_def = User._object_def
-
-class UnitMapping(LdapObjectMapping):
-    _name = "Units"
-    _attribute = "organizationalUnitName"
-    _object_def = Unit._object_def
-    _base = cfg.user.base.active

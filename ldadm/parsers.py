@@ -15,14 +15,3 @@ only_suspended = ArgumentParser(add_help = False)
 only_suspended.add_argument("--suspended",
         action = "store_true",
         help = "Only include suspended users")
-
-single_unit = ArgumentParser(add_help = False)
-single_unit.add_argument("unit",
-        metavar = "UNIT",
-        help = "Unit name")
-
-multi_unit = ArgumentParser(add_help = False)
-multi_unit.add_argument("unit",
-        metavar = "UNIT_NAME",
-        nargs = "*",
-        help = "One or more unit names. If omitted, read from stdin.")
