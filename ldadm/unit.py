@@ -83,11 +83,10 @@ class UnitCommand(Command):
         unit_name = self._args.unit
         sub_tree = self._args.full
 
-        unit = self._get_unit(unit_name)
-        unit_dn = unit.entry_dn
+        unit = UnitMapping()[unit_name]
+        users = UserMapping(base = unit.entry_dn, sub_tree = sub_tree)
 
-        users = UserMapping(base = unit_dn, sub_tree = sub_tree)
-        for uid in users.keys():
+        for uid in users:
             print(uid)
 
     def on_unit_add(self):
