@@ -153,7 +153,7 @@ class LdapObjectMapping(MutableMapping):
     def values(self):
         return self._find_items()
 
-    def keys(self):
+    def _iter_entries(self, dns):
         id_attr = self.__class__._attribute
         reader = self._get_reader()
         results = reader.search_paged(
@@ -163,9 +163,18 @@ class LdapObjectMapping(MutableMapping):
         for entry in results:
             id = entry[id_attr].value
             found.add(id)
-            yield id
+            if dns:
+                yield entry.entry_dn
+            else:
+                yield id
 
         self.__assert_found_all(found)
+
+    def dns(self):
+        return self._iter_entries(dns = True)
+
+    def keys(self):
+        return self._iter_entries(dns = False)
 
     def __contains__(self, id):
         raise NotImplementedError
