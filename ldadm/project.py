@@ -9,7 +9,7 @@ from .command import Command
 from .collections import UserMapping, MissingObjects, LdapObjectMapping
 from .config import cfg
 from .objects import LdapObject
-from .parsers import single_user, multi_user
+from .user import single_user, multi_user
 from .console import pretty_print
 
 log = logging.getLogger(__name__)

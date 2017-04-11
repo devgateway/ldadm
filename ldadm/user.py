@@ -7,13 +7,64 @@ from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, \
 from sshpubkeys import SSHKey, InvalidKeyException
 
 from .console import pretty_print
-from .objects import User
+from .objects import LdapObject
 from .command import Command
-from .collections import UserMapping, MissingObjects
+from .collections import LdapObjectMapping, MissingObjects
 from .config import cfg
-from .parsers import only_suspended, multi_user, single_user
 
 log = logging.getLogger(__name__)
+
+single_user = ArgumentParser(add_help = False)
+single_user.add_argument("username",
+        metavar = "USER_NAME",
+        help = "User ID")
+
+multi_user = ArgumentParser(add_help = False)
+multi_user.add_argument("username",
+        metavar = "USER_NAME",
+        nargs = "*",
+        help = "One or more UIDs. If omitted, read from stdin.")
+
+only_suspended = ArgumentParser(add_help = False)
+only_suspended.add_argument("--suspended",
+        action = "store_true",
+        help = "Only include suspended users")
+
+class User(LdapObject):
+    _config_node = cfg.user
+    _object_class = cfg.user.objectclass
+    # Load attribute definitions by ObjectClass
+    _object_def = ObjectDef(object_class = _object_class, schema = ldap)
+
+
+    @staticmethod
+    def make_password(*args_ignored):
+        """Generate a random password of random length"""
+
+        len_min = 10
+        len_max = 18
+        alphabet = string.ascii_letters + string.punctuation + string.digits
+
+        # select random password length within given limits
+        # then for each position randomly select a character from the alphabet
+        try:
+            length = len_min + secrets.randbelow(len_max - len_min + 1)
+            chars = [ secrets.choice(alphabet) for i in range(length) ]
+        except NameError:
+            log.warning("Python module 'secrets' not available, suggesting insecure password")
+            length = random.randrange(len_min, len_max)
+            chars = [ random.choice(alphabet) for i in range(length) ]
+
+        return ''.join(chars)
+
+    def __init__(self, reference_object = None, pre = {}, post = {}):
+        self.__class__._required_attrs = [ self._canonicalize_name(cfg.user.attr.passwd)[0] ]
+        super().__init__(reference_object = reference_object, pre = pre, post = post)
+
+class UserMapping(LdapObjectMapping):
+    _name = "Users"
+    _attribute = cfg.user.attr.uid
+    _object_def = User._object_def
 
 class UserCommand(Command):
     parser_name = "user"

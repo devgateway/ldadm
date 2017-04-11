@@ -257,8 +257,3 @@ class LdapObjectMapping(MutableMapping):
             return True
 
         return False
-
-class UserMapping(LdapObjectMapping):
-    _name = "Users"
-    _attribute = cfg.user.attr.uid
-    _object_def = User._object_def

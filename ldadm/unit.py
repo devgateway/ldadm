@@ -7,7 +7,7 @@ from .command import Command
 from .collections import UserMapping, MissingObjects, LdapObjectMapping
 from .config import cfg
 from .objects import LdapObject
-from .parsers import multi_user
+from .user import multi_user
 
 log = logging.getLogger(__name__)
 

@@ -267,34 +267,3 @@ class LdapObject:
 
     def __repr__(self):
         return repr(self.attrs)
-
-class User(LdapObject):
-    _config_node = cfg.user
-    _object_class = cfg.user.objectclass
-    # Load attribute definitions by ObjectClass
-    _object_def = ObjectDef(object_class = _object_class, schema = ldap)
-
-
-    @staticmethod
-    def make_password(*args_ignored):
-        """Generate a random password of random length"""
-
-        len_min = 10
-        len_max = 18
-        alphabet = string.ascii_letters + string.punctuation + string.digits
-
-        # select random password length within given limits
-        # then for each position randomly select a character from the alphabet
-        try:
-            length = len_min + secrets.randbelow(len_max - len_min + 1)
-            chars = [ secrets.choice(alphabet) for i in range(length) ]
-        except NameError:
-            log.warning("Python module 'secrets' not available, suggesting insecure password")
-            length = random.randrange(len_min, len_max)
-            chars = [ random.choice(alphabet) for i in range(length) ]
-
-        return ''.join(chars)
-
-    def __init__(self, reference_object = None, pre = {}, post = {}):
-        self.__class__._required_attrs = [ self._canonicalize_name(cfg.user.attr.passwd)[0] ]
-        super().__init__(reference_object = reference_object, pre = pre, post = post)
