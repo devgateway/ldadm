@@ -119,9 +119,8 @@ class UnitCommand(Command):
             raise RuntimeError("One or more units not empty") from err
 
     def on_unit_assign(self):
-        unit_name = self._args.unit
-        unit_dn = self._get_unit(unit_name).entry_dn
+        unit = UnitMapping()[self._args.unit]
 
-        usernames = list(self._args_or_stdin("username"))
-        users = UserMapping(base = __class__.__base, limit = usernames)
-        users.move_all(unit_dn)
+        users = UserMapping(base = UnitMapping._base)
+        users.select(self._args_or_stdin("username"))
+        users.move(unit.entry_dn)
