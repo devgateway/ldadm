@@ -147,12 +147,15 @@ class ProjectCommand(Command):
         project_name = self._args.project
         attr_name = cfg.project.attr.member
 
-        project = self._get_project(project_name, attr_name).entry_writable()
+        project = ProjectMapping()[project_name].entry_writable()
         members = project[attr_name]
 
         usernames = list(self._args_or_stdin("username"))
-        users = UserMapping(base = cfg.user.base.active, limit = usernames)
-        new_members = self._get_dns( list(users.keys()) )
+        if not usernames:
+            raise RuntimeError("Expected usernames to assign to %s" % project_name)
+
+        users = UserMapping(base = cfg.user.base.active).select(usernames)
+        new_members = list(users.dns())
         members += new_members
 
         try:
