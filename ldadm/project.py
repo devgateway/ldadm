@@ -109,13 +109,10 @@ class ProjectCommand(Command):
             print(name)
 
     def on_project_show(self):
-        project_names = list(self._args_or_stdin("project"))
-        projects = ProjectMapping(limit = project_names, attrs = ALL_ATTRIBUTES)
-        try:
-            for project_entry in projects:
-                pretty_print(project_entry)
-        except MissingObjects as err:
-            raise RuntimeError("Projects not found: " + ", ".join(err.items))
+        projects = ProjectMapping(attrs = ALL_ATTRIBUTES)
+        projects.select(self._args_or_stdin("project"))
+        for entry in projects.values():
+            pretty_print(entry)
 
     def on_project_add(self):
         attr_name = ProjectMapping._attribute
