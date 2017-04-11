@@ -112,12 +112,9 @@ class UnitCommand(Command):
         if not unit_names:
             return
 
-        units = UnitMapping(base = __class__.__base, limit = unit_names)
-        for name in unit_names:
-            del units[name]
-
+        units = UnitMapping().select(unit_names)
         try:
-            units.commit_delete()
+            units.delete()
         except LDAPNotAllowedOnNotLeafResult as err:
             raise RuntimeError("One or more units not empty") from err
 
