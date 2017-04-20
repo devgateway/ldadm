@@ -11,6 +11,17 @@ from .connection import ldap
 
 log = logging.getLogger(__name__)
 
+single_unit = ArgumentParser(add_help = False)
+single_unit.add_argument("unit",
+        metavar = "UNIT",
+        help = "Unit name")
+
+multi_unit = ArgumentParser(add_help = False)
+multi_unit.add_argument("unit",
+        metavar = "UNIT_NAME",
+        nargs = "*",
+        help = "One or more unit names. If omitted, read from stdin.")
+
 class Unit(LdapObject):
     try:
         _config_node = cfg.unit
