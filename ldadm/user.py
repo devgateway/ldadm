@@ -564,9 +564,10 @@ class UserCommand(Command):
                 raise RuntimeError("One or more units not empty") from err
 
     def on_user_unit_assign(self):
-        units = UnitMapping(cfg.user.base.active)
+        base = cfg.user.base.active
+        units = UnitMapping(base)
         unit = units[self._args.unit]
 
-        users = UserMapping(base = self._base)
+        users = UserMapping(base = base)
         users.select(self._args_or_stdin("username"))
         users.move(unit.entry_dn)
