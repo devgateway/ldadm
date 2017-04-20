@@ -5,24 +5,11 @@ from ldap3 import ObjectDef
 from ldap3.core.exceptions import LDAPEntryAlreadyExistsResult, LDAPKeyError, \
         LDAPAttributeOrValueExistsResult, LDAPNotAllowedOnNotLeafResult
 
-from .command import Command
 from .abstract import LdapObjectMapping, LdapObject
 from .config import cfg, ConfigAttrError
-from .user import UserMapping, multi_user
 from .connection import ldap
 
 log = logging.getLogger(__name__)
-
-single_unit = ArgumentParser(add_help = False)
-single_unit.add_argument("unit",
-        metavar = "UNIT",
-        help = "Unit name")
-
-multi_unit = ArgumentParser(add_help = False)
-multi_unit.add_argument("unit",
-        metavar = "UNIT_NAME",
-        nargs = "*",
-        help = "One or more unit names. If omitted, read from stdin.")
 
 class Unit(LdapObject):
     try:
