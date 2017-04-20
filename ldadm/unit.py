@@ -26,9 +26,9 @@ class UnitMapping(LdapObjectMapping):
     _attribute = "organizationalUnitName"
     _object_def = Unit._object_def
 
-    def __init__(self, base, child_mapping_class):
-        super().__init__(self, base = base)
+    def __init__(self, base):
         self._base = base
+        super().__init__(base = base)
 
     def add(self, parent_name):
         unit = Unit()
