@@ -166,6 +166,57 @@ class UserCommand(Command):
                     }
                 }
             },
+            "unit": {
+                "kwargs": {
+                    "help": "Organizational units"
+                },
+                "subparsers_title": "Unit command",
+                "subparsers": {
+                    "list": {
+                        "kwargs": {
+                            "help": "List all units"
+                        }
+                    },
+                    "show": {
+                        "kwargs": {
+                            "parents": [single_unit],
+                            "aliases": ["info"],
+                            "help": "List members of the unit"
+                        },
+                        "arguments": {
+                            "--full": {
+                                "action": "store_true",
+                                "help": "List members in nested units, too"
+                            }
+                        }
+                    },
+                    "add": {
+                        "kwargs": {
+                            "aliases": ["create"],
+                            "help": "Add an organizational unit"
+                        },
+                        "arguments": {
+                            "--parent": {
+                                "metavar": "PARENT_UNIT",
+                                "help": "Create nested in this unit"
+                            }
+                        }
+                    },
+                    "delete": {
+                        "kwargs": {
+                            "parents": [multi_unit],
+                            "aliases": ["remove"],
+                            "help": "Delete an organizational unit"
+                        }
+                    },
+                    "assign": {
+                        "kwargs": {
+                            "parents": [single_unit, multi_user],
+                            "help": "Move users to the organizational unit"
+                        }
+                    }
+                }
+            },
             "key": {
                 "kwargs": {
                     "help": "Manipulate user SSH public key"
@@ -484,3 +535,37 @@ class UserCommand(Command):
 
         except LDAPKeyError:
             log.info("User %s has no public keys" % username)
+
+    def on_user_unit_list(self):
+        units = UnitMapping(cfg.user.base.active)
+        for unit in units:
+            print(unit)
+
+    def on_user_unit_show(self):
+        units = UnitMapping(cfg.user.base.active)
+        base = units[self._args.unit].entry_dn
+
+        users = UserMapping(base = base, sub_tree = self._args.full)
+        for uid in users:
+            print(uid)
+
+    def on_user_unit_add(self):
+        units = UnitMapping(cfg.user.base.active)
+        units.add(parent_name = self._args.parent)
+
+    def on_user_unit_delete(self):
+        unit_names = list(self._args_or_stdin("unit"))
+        if unit_names:
+            units = UnitMapping(cfg.user.base.active).select(unit_names)
+            try:
+                units.delete()
+            except LDAPNotAllowedOnNotLeafResult as err:
+                raise RuntimeError("One or more units not empty") from err
+
+    def on_user_unit_assign(self):
+        units = UnitMapping(cfg.user.base.active)
+        unit = units[self._args.unit]
+
+        users = UserMapping(base = self._base)
+        users.select(self._args_or_stdin("username"))
+        users.move(unit.entry_dn)
