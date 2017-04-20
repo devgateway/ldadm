@@ -9,6 +9,7 @@ from .command import Command
 from .abstract import MissingObjects, LdapObjectMapping, LdapObject
 from .config import cfg
 from .user import single_user, multi_user, UserMapping
+from .unit import UnitMapping, single_unit, multi_unit
 from .console import pretty_print
 from .connection import ldap
 
@@ -95,6 +96,57 @@ class ProjectCommand(Command):
                 "kwargs": {
                     "parents": [single_project, single_user],
                     "help": "Make user the manager of the project"
+                }
+            },
+            "unit": {
+                "kwargs": {
+                    "help": "Project units (categories)"
+                },
+                "subparsers_title": "Unit command",
+                "subparsers": {
+                    "list": {
+                        "kwargs": {
+                            "help": "List all units"
+                        }
+                    },
+                    "show": {
+                        "kwargs": {
+                            "parents": [single_unit],
+                            "aliases": ["info"],
+                            "help": "List projects in the unit"
+                        },
+                        "arguments": {
+                            "--full": {
+                                "action": "store_true",
+                                "help": "List projects in nested units, too"
+                            }
+                        }
+                    },
+                    "add": {
+                        "kwargs": {
+                            "aliases": ["create"],
+                            "help": "Add a project unit (category)"
+                        },
+                        "arguments": {
+                            "--parent": {
+                                "metavar": "PARENT_UNIT",
+                                "help": "Create nested in this unit"
+                            }
+                        }
+                    },
+                    "delete": {
+                        "kwargs": {
+                            "parents": [multi_unit],
+                            "aliases": ["remove"],
+                            "help": "Delete an project unit (category)"
+                        }
+                    },
+                    "assign": {
+                        "kwargs": {
+                            "parents": [single_unit, multi_project],
+                            "help": "Move projects to the unit (category)"
+                        }
+                    }
                 }
             }
         }
@@ -194,3 +246,38 @@ class ProjectCommand(Command):
 
         setattr(project, attr_name, dn)
         project.entry_commit_changes(refresh = False)
+
+    def on_project_unit_list(self):
+        units = UnitMapping(cfg.project.base)
+        for unit in units:
+            print(unit)
+
+    def on_project_unit_show(self):
+        units = UnitMapping(cfg.project.base)
+        base = units[self._args.unit].entry_dn
+
+        projects = ProjectMapping(base = base, sub_tree = self._args.full)
+        for uid in projects:
+            print(uid)
+
+    def on_project_unit_add(self):
+        units = UnitMapping(cfg.project.base)
+        units.add(parent_name = self._args.parent)
+
+    def on_project_unit_delete(self):
+        unit_names = list(self._args_or_stdin("unit"))
+        if unit_names:
+            units = UnitMapping(cfg.project.base).select(unit_names)
+            try:
+                units.delete()
+            except LDAPNotAllowedOnNotLeafResult as err:
+                raise RuntimeError("One or more units not empty") from err
+
+    def on_project_unit_assign(self):
+        base = cfg.project.base
+        units = UnitMapping(base)
+        unit = units[self._args.unit]
+
+        projects = ProjectMapping(base = base)
+        projects.select(self._args_or_stdin("project"))
+        projects.move(unit.entry_dn)
