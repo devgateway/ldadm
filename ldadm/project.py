@@ -82,7 +82,20 @@ class ProjectCommand(Command):
                     "help": "Delete projects"
                 }
             },
-            "assign": {
+            "addserver": {
+                "kwargs": {
+                    "parents": [single_project],
+                    "help": "Make servers belong to the project"
+                },
+                "arguments": {
+                    "names": {
+                        "metavar": "NAME",
+                        "help": "Server ID",
+                        "nargs": "+"
+                    }
+                }
+            },
+            "addmember": {
                 "kwargs": {
                     "parents": [single_project],
                     "help": "Make users members of the project"
@@ -90,7 +103,7 @@ class ProjectCommand(Command):
                 "arguments": {
                     "names": {
                         "metavar": "NAME",
-                        "help": "User or server ID",
+                        "help": "User ID",
                         "nargs": "+"
                     }
                 }
@@ -173,7 +186,7 @@ class ProjectCommand(Command):
     def _get_server_dn(self, names):
         mapping = ServerMapping(base = cfg.server.base)
         try:
-            return _get_dn(names, mapping)
+            return self._get_dn(names, mapping)
         except MissingObjects as err:
             msg = "Unknown servers: " + ", ".join(err.items)
             raise RuntimeError(msg) from err
@@ -181,7 +194,7 @@ class ProjectCommand(Command):
     def _get_user_dn(self, names):
         mapping = UserMapping(base = cfg.user.base.active)
         try:
-            return _get_dn(names, mapping)
+            return self._get_dn(names, mapping)
         except MissingObjects as err:
             msg = "Unknown users: " + ", ".join(err.items)
             raise RuntimeError(msg) from err
@@ -224,7 +237,26 @@ class ProjectCommand(Command):
             projects = ProjectMapping()
             projects.select(project_names).delete()
 
-    def on_project_assign(self):
+    def on_project_addserver(self):
+        project_name = self._args.project
+        attr_name = cfg.project.attr.server
+
+        projects = ProjectMapping(attrs = attr_name)
+        project = projects[project_name].entry_writable()
+        servers = project[attr_name]
+
+        names = list(self._args_or_stdin("names"))
+        if not names:
+            raise RuntimeError("Expected server IDs to add to %s" % project_name)
+
+        servers += self._get_server_dn(names)
+
+        try:
+            project.entry_commit_changes(refresh = False)
+        except LDAPAttributeOrValueExistsResult as err:
+            raise RuntimeError("One or more servers already belong to this project") from err
+
+    def on_project_addmember(self):
         project_name = self._args.project
         attr_name = cfg.project.attr.member
 
