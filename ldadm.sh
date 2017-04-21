@@ -1,7 +1,7 @@
 _ldadm() {
 	local CUR="${COMP_WORDS[COMP_CWORD]}"
 	local COMMAND='LOG_LEVEL=CRITICAL ldadm'
-	local KWD_OBJECTS="user list unit project"
+	local KWD_OBJECTS="user list project"
 	local KWD_SUSPENDED="--suspended"
 	local KWD_DEFAULTS="--defaults"
 	local KWD_FILE="--file"
@@ -38,7 +38,7 @@ __ldadm_list_projects() {
 }
 
 __ldadm_list_units() {
-	eval "$COMMAND unit list"
+	eval "$COMMAND $1 unit list"
 }
 
 __ldadm_list_servers() {
@@ -116,9 +116,13 @@ __ldadm_complete_user() {
 				*) REPLY="add create delete remove list show" ;;
 			esac
 			;;
+		unit)
+			__ldadm_complete_unit __ldadm_list_users user
+			return
+			;;
 		*)
 			REPLY="list search find show info suspend ban lock disable restore
-			unban enable delete remove add create rename key passwd"
+			unban enable delete remove add create rename key passwd unit"
 			;;
 	esac
 	COMPREPLY=($(compgen -W "$REPLY" -- $CUR))
@@ -148,46 +152,54 @@ __ldadm_complete_project() {
 				4) REPLY="$(__ldadm_list_users)" ;;
 			esac
 			;;
+		unit)
+			__ldadm_complete_unit __ldadm_list_projects project
+			return
+			;;
 		*)
-			REPLY="list show info assign add create delete remove manage"
+			REPLY="list show info assign add create delete remove manage unit"
 			;;
 	esac
 	COMPREPLY=($(compgen -W "$REPLY" -- $CUR))
 }
 
-# complete unit commands
+# complete unit subcommands
 __ldadm_complete_unit() {
-	case "${COMP_WORDS[2]}" in
+	# $1 is a function to list leaves in unit tree, e.g. users, or projects
+	list_units="$COMMAND $2 unit list" # $2: top level subcommand of ldadm
+
+	case "${COMP_WORDS[3]}" in
 		list) ;;
 		add)
 			case "$COMP_CWORD" in
-				3) REPLY="$KWD_PARENT" ;;
-				4) REPLY="$(__ldadm_list_units)" ;;
+				4) REPLY="$KWD_PARENT" ;;
+				5) REPLY="$(eval $list_units)" ;;
 			esac
 			;;
 		show|info)
 			case "$COMP_CWORD" in
-				3)
+				4)
 					case "$CUR" in
 						-*) REPLY="$KWD_FULL" ;;
-						*)  REPLY="$KWD_FULL $(__ldadm_list_units)" ;;
+						*)  REPLY="$KWD_FULL $(eval $list_units)" ;;
 					esac
 					;;
-				4)
-					REPLY="$(__ldadm_list_units)" ;;
+				5)
+					REPLY="$(eval $list_units)" ;;
 			esac
 			;;
-		delete|remove) REPLY="$(__ldadm_list_units)" ;;
+		delete|remove) REPLY="$(eval $list_units)" ;;
 		assign)
 			case "$COMP_CWORD" in
-				3) REPLY="$(__ldadm_list_units)" ;;
-				*) REPLY="$(__ldadm_list_users)" ;;
+				4) REPLY="$(eval $list_units)" ;;
+				*) REPLY="$($1)" ;;
 			esac
 			;;
 		*)
 			REPLY="list show info assign add create delete remove"
 			;;
 	esac
+
 	COMPREPLY=($(compgen -W "$REPLY" -- $CUR))
 }
 
