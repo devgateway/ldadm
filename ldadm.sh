@@ -143,10 +143,16 @@ __ldadm_complete_project() {
 		show|info)
 				REPLY="$(__ldadm_list_projects)" ;;
 		delete|remove) REPLY="$(__ldadm_list_projects)" ;;
-		assign)
+		addmember)
 			case "$COMP_CWORD" in
 				3) REPLY="$(__ldadm_list_projects)" ;;
-				*) REPLY="$(__ldadm_list_users) $(__ldadm_list_servers)" ;;
+				*) REPLY="$(__ldadm_list_users)" ;;
+			esac
+			;;
+		addserver)
+			case "$COMP_CWORD" in
+				3) REPLY="$(__ldadm_list_projects)" ;;
+				*) REPLY="$(__ldadm_list_servers)" ;;
 			esac
 			;;
 		manage)
@@ -160,7 +166,7 @@ __ldadm_complete_project() {
 			return
 			;;
 		*)
-			REPLY="list show info assign add create delete remove manage unit"
+			REPLY="list show info addmember addserver add create delete remove manage unit"
 			;;
 	esac
 	COMPREPLY=($(compgen -W "$REPLY" -- $CUR))
