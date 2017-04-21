@@ -34,11 +34,12 @@ class Unit(LdapObject):
     _object_class = "organizationalUnit"
     # Load attribute definitions by ObjectClass
     _object_def = ObjectDef(object_class = _object_class, schema = ldap)
+    attribute = "organizationalUnitName"
 
 class UnitMapping(LdapObjectMapping):
     _name = "Units"
-    _attribute = "organizationalUnitName"
     _object_def = Unit._object_def
+    _attribute = Unit.attribute
 
     def __init__(self, base):
         self._base = base
@@ -46,15 +47,15 @@ class UnitMapping(LdapObjectMapping):
 
     def add(self, parent_name):
         unit = Unit()
-        ou = unit.attrs[UnitMapping._attribute]
+        ou = unit.attrs[self.__class__._attribute]
 
         if parent_name:
-            parent = UnitMapping()[parent_name]
+            parent = self.__class__(base = self._base)[parent_name]
             base = parent.entry_dn
         else:
             base = self._base
 
-        subunits = UnitMapping(base = base)
+        subunits = self.__class__(base = base)
         subunits[ou] = unit.attrs
 
         if unit.message:

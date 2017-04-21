@@ -350,7 +350,7 @@ class LdapObject:
             if key in self._templates \
                     or key in self.__class__._required_attrs \
                     or attr_def.mandatory \
-                    or key.lower() == self.__class__._config_node.attr.id.lower():
+                    or key.lower() == self.__class__.attribute.lower():
                 if key.lower() == "objectclass":
                     self.attrs[key] = self.__class__._object_class
                 else:

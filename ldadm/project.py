@@ -34,12 +34,13 @@ class Project(LdapObject):
     _config_node = cfg.project
     _object_class = cfg.project.objectclass
     _object_def = ObjectDef(object_class = _object_class, schema = ldap)
+    attribute = cfg.project.attr.id
 
 class ProjectMapping(LdapObjectMapping):
     _name = "Projects"
-    _attribute = cfg.project.attr.id
     _object_def = Project._object_def
     _base = cfg.project.base
+    _attribute = Project.attribute
 
 class ProjectCommand(Command):
     __base = cfg.project.base
@@ -181,7 +182,7 @@ class ProjectCommand(Command):
             pretty_print(entry)
 
     def on_project_add(self):
-        attr_name = ProjectMapping._attribute
+        attr_name = Project.attribute
         projects = ProjectMapping(attrs = ALL_ATTRIBUTES)
 
         # Get default values from a reference object

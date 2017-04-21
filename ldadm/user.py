@@ -39,6 +39,7 @@ class User(LdapObject):
     _object_class = cfg.user.objectclass
     # Load attribute definitions by ObjectClass
     _object_def = ObjectDef(object_class = _object_class, schema = ldap)
+    attribute = cfg.user.attr.uid
 
 
     @staticmethod
@@ -67,8 +68,8 @@ class User(LdapObject):
 
 class UserMapping(LdapObjectMapping):
     _name = "Users"
-    _attribute = cfg.user.attr.uid
     _object_def = User._object_def
+    _attribute = User.attribute
 
     @staticmethod
     def get_dn(names):
@@ -405,7 +406,7 @@ class UserCommand(Command):
         user = User(reference_object = source_obj, pre = pre)
 
         # Write the object to LDAP
-        uid = user.attrs[UserMapping._attribute]
+        uid = user.attrs[User.attribute]
         users = UserMapping(base = cfg.user.base.active)
         users[uid] = user.attrs
 

@@ -33,12 +33,13 @@ class Server(LdapObject):
     _config_node = cfg.server
     _object_class = cfg.server.objectclass
     _object_def = ObjectDef(object_class = _object_class, schema = ldap)
+    attribute = cfg.server.attr.id
 
 class ServerMapping(LdapObjectMapping):
     _name = "Servers"
-    _attribute = cfg.server.attr.id
     _object_def = Server._object_def
     _base = cfg.server.base
+    _attribute = Server.attribute
 
     @staticmethod
     def get_dn(names):
@@ -157,7 +158,7 @@ class ServerCommand(Command):
             pretty_print(entry)
 
     def on_server_add(self):
-        attr_name = ServerMapping._attribute
+        attr_name = Server.attribute
         servers = ServerMapping(attrs = ALL_ATTRIBUTES)
 
         # Get default values from a reference object
