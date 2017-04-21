@@ -144,3 +144,8 @@ class ServerCommand(Command):
             }
         }
     }
+
+    def on_server_list(self):
+        servers = ServerMapping()
+        for name in servers:
+            print(name)
