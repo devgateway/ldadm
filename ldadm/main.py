@@ -34,7 +34,7 @@ def main():
     subcommands = ap.add_subparsers(description = "Objects to manage", dest = "subcommand")
     subcommands.required = True
 
-    command_modules = ["user", "unit", "project"]
+    command_modules = ["user", "server", "project"]
     for module_name in command_modules:
         module = import_module("." + module_name, "ldadm")
         for name, cls in inspect.getmembers(module, inspect.isclass):

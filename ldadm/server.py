@@ -149,3 +149,9 @@ class ServerCommand(Command):
         servers = ServerMapping()
         for name in servers:
             print(name)
+
+    def on_server_show(self):
+        servers = ServerMapping(attrs = ALL_ATTRIBUTES)
+        servers.select(self._args_or_stdin("server"))
+        for entry in servers.values():
+            pretty_print(entry)
