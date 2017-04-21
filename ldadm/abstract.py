@@ -1,3 +1,6 @@
+# Copyright 2017, Development Gateway, Inc.
+# This file is part of ldadm, see COPYING.
+
 import logging, string, re, copy
 try:
     import secrets # Python 3.6+

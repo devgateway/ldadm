@@ -1,3 +1,6 @@
+# Copyright 2017, Development Gateway, Inc.
+# This file is part of ldadm, see COPYING.
+
 _ldadm() {
 	local CUR="${COMP_WORDS[COMP_CWORD]}"
 	local COMMAND='LOG_LEVEL=CRITICAL ldadm'

@@ -1,4 +1,6 @@
-#!/usr/bin/python3
+# Copyright 2017, Development Gateway, Inc.
+# This file is part of ldadm, see COPYING.
+
 import logging, sys, os, argparse, inspect
 from importlib import import_module
 

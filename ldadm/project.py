@@ -1,3 +1,6 @@
+# Copyright 2017, Development Gateway, Inc.
+# This file is part of ldadm, see COPYING.
+
 import logging
 from argparse import ArgumentParser
 
