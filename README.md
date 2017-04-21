@@ -2,7 +2,8 @@
 
 ## Synopsis
 
-	ldadm [OPTIONS...] {user|unit|list|server|project} [ARGUMENTS...]
+	ldadm {user|list|server|project} [ARGUMENTS...]
+	ldadm {user|list|server|project} unit [ARGUMENTS...]
 
 ### User commands
 
@@ -15,14 +16,6 @@
 	ldadm user key list USER_NAME
 	ldadm user key delete USER_NAME KEY_NAME...
 	ldadm user key add [--file FILE_NAME] USER_NAME
-
-### Unit commands
-
-	ldadm unit list
-	ldadm unit show [--full] UNIT
-	ldadm unit add [--parent PARENT_UNIT]
-	ldadm unit delete UNIT
-	ldadm unit assign UNIT [USER_NAME...]
 
 ### Project commands
 
@@ -132,38 +125,6 @@ Delete public keys from the user by MD5 hash or comment. MD5 prefix and separato
 
 Add public keys to the user, reading one key per line from the given file, or standard input. Only single-line keys (OpenSSH format) are supported, not PEM-encoded PKCS#1 ones.
 
-## Unit commands
-
-### Listing units
-
-	ldadm unit list
-
-Search for units in subtree scope, i.e. including the root unit, and display their IDs (names).
-
-### Listing users in a unit
-
-	ldadm unit show [--full] UNIT
-
-List user IDs belonging to a unit. If `--full` argument is given, a subtree search is made, i.e. users from nested units are included.
-
-### Creating a new unit
-
-	ldadm unit add [--parent PARENT_UNIT]
-
-Add a new unit, prompting the user for required attributes. If `--parent` argument is given, create the new one nested under that unit.
-
-### Deleting units
-
-	ldadm unit delete [UNIT...]
-
-Removing empty units. LDAP server must refuse the operation if a unit is not empty.
-
-### Moving people to a unit
-
-	ldadm unit assign UNIT [USER_NAME...]
-
-Assign users to a unit, moving their accounts from their current unit(s). User names are read from argument list, or standard input.
-
 ## Project commands
 
 ### Listing projects
@@ -201,6 +162,40 @@ Make users or servers members of a project.
 	ldadm project manage PROJECT USER_NAME
 
 Make a user project manager.
+
+## Unit subcommands
+
+Unit subcommands allow grouping any resources (users, projects, etc) into organizational units (OU) and managing these groups.
+
+### Listing units
+
+	ldadm {SUBCOMMAND} unit list
+
+Search for units in subtree scope, i.e. including the root unit, and display their IDs (names). SUBCOMMAND is any type of objects managed by ldadm, such as `user` or `project`.
+
+### Listing users in a unit
+
+	ldadm user unit show [--full] UNIT
+
+List user IDs belonging to a unit. If `--full` argument is given, a subtree search is made, i.e. users from nested units are included.
+
+### Creating a new unit to contain projects
+
+	ldadm project unit add [--parent PARENT_UNIT]
+
+Add a new unit, prompting the user for required attributes. If `--parent` argument is given, create the new one nested under that unit.
+
+### Deleting units
+
+	ldadm project unit delete [UNIT...]
+
+Removing empty units. LDAP server must refuse the operation if a unit is not empty.
+
+### Moving people to a unit
+
+	ldadm user unit assign UNIT [USER_NAME...]
+
+Assign users to a unit, moving their accounts from their current unit(s). User names are read from argument list, or standard input.
 
 ## Configuration file
 
