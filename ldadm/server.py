@@ -155,3 +155,20 @@ class ServerCommand(Command):
         servers.select(self._args_or_stdin("server"))
         for entry in servers.values():
             pretty_print(entry)
+
+    def on_server_add(self):
+        attr_name = ServerMapping._attribute
+        servers = ServerMapping(attrs = ALL_ATTRIBUTES)
+
+        # Get default values from a reference object
+        if self._args.defaults:
+            source_obj = servers[self._args.defaults]
+        else:
+            source_obj = None
+
+        server = Server(reference_object = source_obj)
+        id = server.attrs[attr_name]
+        servers[id] = server.attrs
+
+        if server.message:
+            print(server.message)
