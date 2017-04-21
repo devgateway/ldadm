@@ -172,3 +172,44 @@ class ServerCommand(Command):
 
         if server.message:
             print(server.message)
+
+    def on_server_delete(self):
+        server_names = list(self._args_or_stdin("server"))
+        if server_names:
+            servers = ServerMapping()
+            servers.select(server_names).delete()
+
+    def on_server_unit_list(self):
+        units = UnitMapping(cfg.server.base)
+        for unit in units:
+            print(unit)
+
+    def on_server_unit_show(self):
+        units = UnitMapping(cfg.server.base)
+        base = units[self._args.unit].entry_dn
+
+        servers = ServerMapping(base = base, sub_tree = self._args.full)
+        for uid in servers:
+            print(uid)
+
+    def on_server_unit_add(self):
+        units = UnitMapping(cfg.server.base)
+        units.add(parent_name = self._args.parent)
+
+    def on_server_unit_delete(self):
+        unit_names = list(self._args_or_stdin("unit"))
+        if unit_names:
+            units = UnitMapping(cfg.server.base).select(unit_names)
+            try:
+                units.delete()
+            except LDAPNotAllowedOnNotLeafResult as err:
+                raise RuntimeError("One or more units not empty") from err
+
+    def on_server_unit_assign(self):
+        base = cfg.server.base
+        units = UnitMapping(base)
+        unit = units[self._args.unit]
+
+        servers = ServerMapping(base = base)
+        servers.select(self._args_or_stdin("server"))
+        servers.move(unit.entry_dn)
