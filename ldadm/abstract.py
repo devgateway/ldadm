@@ -122,7 +122,10 @@ class LdapObjectMapping(MutableMapping):
 
     def _get_reader(self, ids = None):
         if ids:
-            query = self.__class__._attribute + ": " + ";".join(ids)
+            # simplified query language can't search by multi-value attrs;
+            # take just the first value then
+            criteria = map(lambda x: x[0] if type(x) is list else x, ids)
+            query = self.__class__._attribute + ": " + ";".join(criteria)
         elif type(self._select) is set:
             query = self.__class__._attribute + ": " + ";".join(list(self._select))
         else:
@@ -144,6 +147,8 @@ class LdapObjectMapping(MutableMapping):
     def _make_dn(self, attrs):
         id_attr = self.__class__._attribute
         key = attrs[id_attr]
+        if type(key) is list:
+            key = key[0]
         rdn = "=".join( [id_attr, escape_attribute_value(key)] )
         return safe_dn( [rdn, self._base] )
 
