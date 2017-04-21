@@ -23,7 +23,7 @@
 	ldadm project show PROJECT
 	ldadm project add
 	ldadm project delete PROJECT
-	ldadm project assign PROJECT [{USER_NAME|SERVER_NAME}...]
+	ldadm project addmember PROJECT [{USER_NAME|SERVER_NAME}...]
 	ldadm project manage PROJECT USER_NAME
 
 ### List commands
@@ -151,11 +151,17 @@ Add a new project, prompting the user for required attributes.
 
 Remove projects.
 
-### Assigning people or servers to a project
+### Assigning people to a project
 
-	ldadm project assign PROJECT [{USER_NAME|SERVER_NAME}...]
+	ldadm project addmember PROJECT [USER_NAME...]
 
-Make users or servers members of a project.
+Make users members of a project.
+
+### Assigning servers to a project
+
+	ldadm project addserver PROJECT [SERVER_NAME...]
+
+Make servers belong to a project.
 
 ### Setting a project manager
 
