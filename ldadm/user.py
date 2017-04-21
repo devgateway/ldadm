@@ -70,6 +70,15 @@ class UserMapping(LdapObjectMapping):
     _attribute = cfg.user.attr.uid
     _object_def = User._object_def
 
+    @staticmethod
+    def get_dn(names):
+        mapping = UserMapping(base = cfg.user.base.active)
+        try:
+            return __class__._get_dn(names, mapping)
+        except MissingObjects as err:
+            msg = "Unknown users: " + ", ".join(err.items)
+            raise RuntimeError(msg) from err
+
 class UserCommand(Command):
     parser_name = "user"
     parser_args = {

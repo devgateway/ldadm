@@ -90,6 +90,22 @@ class LdapObjectMapping(MutableMapping):
 
         return self
 
+    @staticmethod
+    def _get_dn(names, mapping):
+        if type(names) is list:
+            name_list = names
+        else:
+            name_list = [names]
+
+        mapping.select(name_list)
+
+        results = list( mapping.dns() )
+
+        if type(names) is list:
+            return results
+        else:
+            return results[0]
+
     @classmethod
     def _make_rdn(cls, entry, new_val):
         # RDN can be an array: gn=John+sn=Doe

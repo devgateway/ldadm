@@ -15,6 +15,7 @@ from .user import single_user, multi_user, UserMapping
 from .unit import UnitMapping, single_unit, multi_unit
 from .console import pretty_print
 from .connection import ldap
+from .server import ServerMapping
 
 log = logging.getLogger(__name__)
 
@@ -168,37 +169,6 @@ class ProjectCommand(Command):
         }
     }
 
-    def _get_dn(self, names, mapping):
-        if type(names) is list:
-            name_list = names
-        else:
-            name_list = [names]
-
-        mapping.select(name_list)
-
-        results = list( mapping.dns() )
-
-        if type(names) is list:
-            return results
-        else:
-            return results[0]
-
-    def _get_server_dn(self, names):
-        mapping = ServerMapping(base = cfg.server.base)
-        try:
-            return self._get_dn(names, mapping)
-        except MissingObjects as err:
-            msg = "Unknown servers: " + ", ".join(err.items)
-            raise RuntimeError(msg) from err
-
-    def _get_user_dn(self, names):
-        mapping = UserMapping(base = cfg.user.base.active)
-        try:
-            return self._get_dn(names, mapping)
-        except MissingObjects as err:
-            msg = "Unknown users: " + ", ".join(err.items)
-            raise RuntimeError(msg) from err
-
     def on_project_list(self):
         projects = ProjectMapping()
         for name in projects:
@@ -221,8 +191,8 @@ class ProjectCommand(Command):
             source_obj = None
 
         post = {
-                cfg.project.attr.manager: self._get_user_dn,
-                cfg.project.attr.member: self._get_user_dn
+                cfg.project.attr.manager: UserMapping.get_dn,
+                cfg.project.attr.member: UserMapping.get_dn
                 }
         project = Project(reference_object = source_obj, post = post)
         id = project.attrs[attr_name]
@@ -249,7 +219,7 @@ class ProjectCommand(Command):
         if not names:
             raise RuntimeError("Expected server IDs to add to %s" % project_name)
 
-        servers += self._get_server_dn(names)
+        servers += ServerMapping.get_dn(names)
 
         try:
             project.entry_commit_changes(refresh = False)
@@ -268,7 +238,7 @@ class ProjectCommand(Command):
         if not names:
             raise RuntimeError("Expected user IDs to assign to %s" % project_name)
 
-        members += self._get_user_dn(names)
+        members += UserMapping.get_dn(names)
 
         try:
             project.entry_commit_changes(refresh = False)
