@@ -170,7 +170,12 @@ class LdapObjectMapping(MutableMapping):
         found = set()
         for entry in results:
             id = entry[id_attr].value
-            found.add(id)
+            if type(id) is list:
+                for value in id:
+                    found.add(value)
+            else:
+                found.add(id)
+
             yield entry
 
         self.__assert_found_all(found)
@@ -187,7 +192,12 @@ class LdapObjectMapping(MutableMapping):
         found = set()
         for entry in results:
             id = entry[id_attr].value
-            found.add(id)
+            if type(id) is list:
+                for value in id:
+                    found.add(value)
+            else:
+                found.add(id)
+
             if dns:
                 yield entry.entry_dn
             else:
@@ -231,7 +241,12 @@ class LdapObjectMapping(MutableMapping):
         found = set()
         for entry in writer:
             id = entry[id_attr].value
-            found.add(id)
+            if type(id) is list:
+                for value in id:
+                    found.add(value)
+            else:
+                found.add(id)
+
             entry.entry_delete()
 
         writer.commit(refresh = False)
@@ -250,7 +265,12 @@ class LdapObjectMapping(MutableMapping):
         found = set()
         for entry in writer:
             id = entry[id_attr].value
-            found.add(id)
+            if type(id) is list:
+                for value in id:
+                    found.add(value)
+            else:
+                found.add(id)
+
             entry.entry_move(new_base)
 
         writer.commit(refresh = False)

@@ -72,7 +72,7 @@ class UserMapping(LdapObjectMapping):
 
     @staticmethod
     def get_dn(names):
-        mapping = UserMapping(base = cfg.user.base.active)
+        mapping = __class__(base = cfg.user.base.active)
         try:
             return __class__._get_dn(names, mapping)
         except MissingObjects as err:
