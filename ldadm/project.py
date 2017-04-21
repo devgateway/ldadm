@@ -155,29 +155,36 @@ class ProjectCommand(Command):
         }
     }
 
-    def _get_dn(self, names):
+    def _get_dn(self, names, mapping):
         if type(names) is list:
             name_list = names
         else:
             name_list = [names]
 
-        users = UserMapping(base = cfg.user.base.active)
-        users.select(name_list)
+        mapping.select(name_list)
 
-        try:
-            results = list( users.dns() )
-        except MissingObjects:
-            try:
-                servers = ServerMapping().select(name_list)
-                results = list( servers.dns() )
-            except MissingObjects as err:
-                msg = "Unknown users or servers: " + ", ".join(err.items)
-                raise RuntimeError(msg) from err
+        results = list( mapping.dns() )
 
         if type(names) is list:
             return results
         else:
             return results[0]
+
+    def _get_server_dn(self, names):
+        mapping = ServerMapping(base = cfg.server.base)
+        try:
+            return _get_dn(names, mapping)
+        except MissingObjects as err:
+            msg = "Unknown servers: " + ", ".join(err.items)
+            raise RuntimeError(msg) from err
+
+    def _get_user_dn(self, names):
+        mapping = UserMapping(base = cfg.user.base.active)
+        try:
+            return _get_dn(names, mapping)
+        except MissingObjects as err:
+            msg = "Unknown users: " + ", ".join(err.items)
+            raise RuntimeError(msg) from err
 
     def on_project_list(self):
         projects = ProjectMapping()
@@ -201,8 +208,8 @@ class ProjectCommand(Command):
             source_obj = None
 
         post = {
-                cfg.project.attr.manager: self._get_dn,
-                cfg.project.attr.member: self._get_dn
+                cfg.project.attr.manager: self._get_user_dn,
+                cfg.project.attr.member: self._get_user_dn
                 }
         project = Project(reference_object = source_obj, post = post)
         id = project.attrs[attr_name]
@@ -227,9 +234,9 @@ class ProjectCommand(Command):
 
         names = list(self._args_or_stdin("names"))
         if not names:
-            raise RuntimeError("Expected user or server IDs to assign to %s" % project_name)
+            raise RuntimeError("Expected user IDs to assign to %s" % project_name)
 
-        members += self._get_dn(names)
+        members += self._get_user_dn(names)
 
         try:
             project.entry_commit_changes(refresh = False)
