@@ -94,7 +94,7 @@ class ServerCommand(Command):
             },
             "unit": {
                 "kwargs": {
-                    "help": "Server units"
+                    "help": "Manage server units"
                 },
                 "subparsers_title": "Unit command",
                 "subparsers": {

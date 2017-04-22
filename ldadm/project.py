@@ -118,7 +118,7 @@ class ProjectCommand(Command):
             },
             "unit": {
                 "kwargs": {
-                    "help": "Project units (categories)"
+                    "help": "Manage project units (categories)"
                 },
                 "subparsers_title": "Unit command",
                 "subparsers": {

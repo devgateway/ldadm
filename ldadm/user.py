@@ -182,7 +182,7 @@ class UserCommand(Command):
             },
             "unit": {
                 "kwargs": {
-                    "help": "Organizational units"
+                    "help": "Manage organizational units"
                 },
                 "subparsers_title": "Unit command",
                 "subparsers": {
