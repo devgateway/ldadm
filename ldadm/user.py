@@ -373,10 +373,9 @@ class UserCommand(Command):
         self._set_active(usernames, active = True)
 
     def on_user_delete(self):
-        usernames = list(self._args_or_stdin("username"))
-        if usernames:
-            users = UserMapping(base = cfg.user.base.suspended)
-            users.select(usernames).delete()
+        usernames = self._args_or_stdin("username")
+        users = UserMapping(base = cfg.user.base.suspended)
+        users.select(usernames).delete()
 
     def on_user_rename(self):
         base = cfg.user.base.active

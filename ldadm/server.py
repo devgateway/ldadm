@@ -175,10 +175,9 @@ class ServerCommand(Command):
             print(server.message)
 
     def on_server_delete(self):
-        server_names = list(self._args_or_stdin("server"))
-        if server_names:
-            servers = ServerMapping()
-            servers.select(server_names).delete()
+        server_names = self._args_or_stdin("server")
+        servers = ServerMapping()
+        servers.select(server_names).delete()
 
     def on_server_unit_list(self):
         units = UnitMapping(cfg.server.base)

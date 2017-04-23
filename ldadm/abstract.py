@@ -31,6 +31,9 @@ class MissingObjects(Exception):
         items = ", ".join(list(self.items))
         return "%s not found: %s" % (self.name, items)
 
+class NothingSelected(ValueError):
+    pass
+
 #### How to use this MutableMapping
 ### List IDs:
 # for key in mapping:
@@ -127,7 +130,18 @@ class LdapObjectMapping(MutableMapping):
             criteria = map(lambda x: x[0] if type(x) is list else x, ids)
             query = self.__class__._attribute + ": " + ";".join(criteria)
         elif type(self._select) is set:
-            query = self.__class__._attribute + ": " + ";".join(list(self._select))
+            criteria = []
+            for value in self._select:
+                try:
+                    if value != "":
+                        criteria.append(value)
+                except TypeError:
+                    pass
+
+            if criteria:
+                query = self.__class__._attribute + ": " + ";".join(criteria)
+            else:
+                raise NothingSelected("No items selected")
         else:
             query = self._select
 
@@ -168,7 +182,12 @@ class LdapObjectMapping(MutableMapping):
             if id_attr not in requested_attrs:
                 requested_attrs.append(id_attr)
 
-        reader = self._get_reader(ids)
+        try:
+            reader = self._get_reader(ids)
+        except NothingSelected as nothing:
+            log.info("No objects selected")
+            raise StopIteration from nothing
+
         results = reader.search_paged(
                 paged_size = cfg.ldap.paged_search_size,
                 attributes = requested_attrs)

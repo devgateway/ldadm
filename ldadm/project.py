@@ -203,10 +203,9 @@ class ProjectCommand(Command):
             print(project.message)
 
     def on_project_delete(self):
-        project_names = list(self._args_or_stdin("project"))
-        if project_names:
-            projects = ProjectMapping()
-            projects.select(project_names).delete()
+        project_names = self._args_or_stdin("project")
+        projects = ProjectMapping()
+        projects.select(project_names).delete()
 
     def on_project_addserver(self):
         project_name = self._args.project
