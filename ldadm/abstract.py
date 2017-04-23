@@ -200,6 +200,7 @@ class LdapObjectMapping(MutableMapping):
             if type(id) is list:
                 for value in id:
                     found.add(value)
+                id = id[0] # only yield the first value
             else:
                 found.add(id)
 
