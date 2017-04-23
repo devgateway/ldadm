@@ -4,7 +4,7 @@
 _ldadm() {
 	local CUR="${COMP_WORDS[COMP_CWORD]}"
 	local COMMAND='LOG_LEVEL=CRITICAL ldadm'
-	local KWD_OBJECTS="user list project"
+	local KWD_OBJECTS="user list project server"
 	local KWD_SUSPENDED="--suspended"
 	local KWD_DEFAULTS="--defaults"
 	local KWD_FILE="--file"
@@ -22,6 +22,7 @@ _ldadm() {
 		user) __ldadm_complete_user ;;
 		list) __ldadm_complete_list ;;
 		unit) __ldadm_complete_unit ;;
+		server) __ldadm_complete_server ;;
 		project) __ldadm_complete_project ;;
 		*) COMPREPLY=($(compgen -W "$KWD_OBJECTS" -- $CUR)) ;;
 	esac
@@ -40,13 +41,12 @@ __ldadm_list_projects() {
 	eval "$COMMAND project list"
 }
 
-__ldadm_list_units() {
-	eval "$COMMAND $1 unit list"
+__ldadm_list_servers() {
+	eval "$COMMAND server list"
 }
 
-__ldadm_list_servers() {
-	#eval "$COMMAND server list"
-	:
+__ldadm_list_units() {
+	eval "$COMMAND $1 unit list"
 }
 
 # complete user commands
@@ -135,6 +135,25 @@ __ldadm_complete_user() {
 __ldadm_complete_list() {
 	return 1
 }
+
+# complete server commands
+__ldadm_complete_server() {
+	case "${COMP_WORDS[2]}" in
+		list|add|create) ;;
+		show|info)
+				REPLY="$(__ldadm_list_servers)" ;;
+		delete|remove) REPLY="$(__ldadm_list_servers)" ;;
+		unit)
+			__ldadm_complete_unit __ldadm_list_servers server
+			return
+			;;
+		*)
+			REPLY="list show info add create delete remove unit"
+			;;
+	esac
+	COMPREPLY=($(compgen -W "$REPLY" -- $CUR))
+}
+
 
 # complete project commands
 __ldadm_complete_project() {
