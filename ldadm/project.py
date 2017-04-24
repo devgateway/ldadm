@@ -93,7 +93,7 @@ class ProjectCommand(Command):
                     "names": {
                         "metavar": "NAME",
                         "help": "Server ID",
-                        "nargs": "+"
+                        "nargs": "*"
                     }
                 }
             },
@@ -106,7 +106,7 @@ class ProjectCommand(Command):
                     "names": {
                         "metavar": "NAME",
                         "help": "User ID",
-                        "nargs": "+"
+                        "nargs": "*"
                     }
                 }
             },
