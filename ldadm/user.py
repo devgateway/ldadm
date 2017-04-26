@@ -1,7 +1,7 @@
 # Copyright 2017, Development Gateway, Inc.
 # This file is part of ldadm, see COPYING.
 
-import random, re, logging
+import random, re, logging, string
 from argparse import FileType, ArgumentParser
 
 from ldap3 import ALL_ATTRIBUTES, ObjectDef
