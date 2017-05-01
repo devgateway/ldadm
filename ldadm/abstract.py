@@ -22,6 +22,37 @@ from .connection import ldap
 
 log = logging.getLogger(__name__)
 
+def entry_name(entry, name_attr):
+    """Return consistent scalar entry common name."""
+
+    values = entry[name_attr].values
+
+    if len(values) == 1:
+        # if there's just one value, use it
+        name = values[0]
+    else:
+        name_vals = set(values)
+
+        # find, if any of them are in RDN
+        rdn_vals = set()
+        for component in safe_rdn(entry.entry_dn, decompose = True):
+            if component[0] == name_attr:
+                rdn_vals.add(component[1])
+
+        common_vals = rdn_vals & name_vals
+        matched = len(common_vals)
+        if matched == 1:
+            # only one value used in RDN
+            name = list(common_vals)[0]
+        elif matched:
+            # multiple values in RDN; use first of them alphabetically
+            name = sorted(list(common_vals))[0]
+        else:
+            # none in RDN at all; use first name alphabetically
+            name = sorted(list(name_vals))[0]
+
+    return name
+
 class MissingObjects(Exception):
     def __init__(self, name, items):
         self.name = name
@@ -215,18 +246,13 @@ class LdapObjectMapping(MutableMapping):
                 attributes = self.__class__._attribute)
         found = set()
         for entry in results:
-            id = entry[id_attr].value
-            if type(id) is list:
-                for value in id:
-                    found.add(value)
-                id = id[0] # only yield the first value
-            else:
-                found.add(id)
+            for value in entry[id_attr].values:
+                found.add(value)
 
             if dns:
                 yield entry.entry_dn
             else:
-                yield id
+                yield entry_name(entry, id_attr)
 
         self.__assert_found_all(found)
 

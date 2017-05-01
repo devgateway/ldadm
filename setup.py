@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
         name = "ldadm",
-        version = "1.0",
+        version = "0.4",
         license = "GPLv3+",
         description = "Manage LDAP accounts",
         author = "Development Gateway",
@@ -13,7 +13,7 @@ setup(
         packages = ["ldadm"],
         install_requires = [
             "PyYAML",
-            "ldap3 >= 2.2.2",
+            "ldap3 >= 2.2.3",
             "sshpubkeys >= 2.2.0"
             ],
         entry_points = {
