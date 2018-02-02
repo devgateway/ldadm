@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
         name = "ldadm",
-        version = "0.4",
+        version = "1.1",
         license = "GPLv3+",
         description = "Manage LDAP accounts",
         author = "Development Gateway",
