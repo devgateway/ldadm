@@ -13,7 +13,7 @@ except ImportError:
 
 from ldap3 import ALL_ATTRIBUTES, Reader, Writer
 from ldap3.utils.ciDict import CaseInsensitiveWithAliasDict
-from ldap3.utils.dn import escape_attribute_value, safe_dn, safe_rdn
+from ldap3.utils.dn import _escape_attribute_value, safe_dn, safe_rdn
 from ldap3.core.exceptions import LDAPKeyError
 
 from .config import cfg, ConfigAttrError
@@ -194,7 +194,7 @@ class LdapObjectMapping(MutableMapping):
         key = attrs[id_attr]
         if type(key) is list:
             key = key[0]
-        rdn = "=".join( [id_attr, escape_attribute_value(key)] )
+        rdn = "=".join( [id_attr, _escape_attribute_value(key)] )
         return safe_dn( [rdn, self._base] )
 
     def __iter__(self):
